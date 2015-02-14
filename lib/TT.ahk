@@ -311,7 +311,7 @@ TT_GetIcon(File:="",Icon_:=1){
     Return hIcon[File,Icon_]:=Icon
   } else if (Icon_=""){
     If !FileExist(File){ 
-      if (Type(File+0)="Integer") ;assume Hex string
+      if RegExMatch(File,"^[0-9A-Fa-f]+$") ;assume Hex string
       {
         nSize := StrLen(File)//2
         VarSetCapacity( Buffer,nSize ) 

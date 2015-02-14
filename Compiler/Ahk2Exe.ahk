@@ -201,11 +201,6 @@ LoopFiles, %A_ScriptDir%\..\*.bin,FR
 {
 	SplitPath,% A_LoopFileFullPath,,d,, n
 	FileGetVersion, v, %A_LoopFileFullPath%
-	; Listvars
-	; MsgBox % SubStr(d,StrLen(A_ScriptDir)+2)
-	; If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
-		; BinFiles.Push(d "\" n ".bin")
-	; else 
 	BinFiles.Push(A_LoopFileFullPath)
 	BinNames .= "|v" v " " n ".bin (..\" SubStr(d,InStr(d,"\",1,-1)+1) ")"
 }
@@ -215,9 +210,6 @@ LoopFiles, %A_ScriptDir%\..\*.exe,FR
 	FileGetVersion, v, %A_LoopFileFullPath%
 	If !InStr(FileGetInfo(A_LoopFileFullPath,"FileDescription"),"AutoHotkey")
 		continue
-	; If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
-		; BinFiles.Push(d "\" n ".exe")
-	; else 
 	BinFiles.Push(A_LoopFileFullPath)
 	BinNames .= "|v" v " " n ".exe" " (..\" SubStr(d,InStr(d,"\",1,-1)+1) ")"
 }
@@ -227,9 +219,6 @@ LoopFiles, %A_ScriptDir%\..\*.dll,FR
 	FileGetVersion, v, %A_LoopFileFullPath%
 	If !InStr(FileGetInfo(A_LoopFileFullPath,"FileDescription"),"AutoHotkey")
 		continue
-	; If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
-		; BinFiles.Push(d "\" n ".dll")
-	; else 
 	BinFiles.Push(A_LoopFileFullPath)
 	BinNames .= "|v" v " " n ".dll" " (..\" SubStr(d,InStr(d,"\",1,-1)+1) ")"
 }

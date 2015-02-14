@@ -33,8 +33,11 @@ ZipFileRaw(fileIn,fileOut,password:=""){
 		  CryptBinaryToStringA(buffer,len,0x1,0,getvar(encLen:=0))
 		  ,VarSetCapacity(buff,encLen*2,0)
 		  ,CryptBinaryToStringA(buffer,len,0x1,&buff,getvar(encLen))
-		  ,encLen:=CryptAES(buff,encLen,password) ; encLen + 1???
-		  ,pBuff:=&buff
+		  if (!encLen:=CryptAES(buff,encLen,password)){ ; encLen + 1???
+			MsgBox Error CryptAES
+			return
+		  }
+		  pBuff:=&buff
 		} else pBuff:=buffer,encLen:=0
 		hdr:=Struct("UInt[5]",[0x4034b50,0,len,sz,encLen])
 		,HashData(pBuff,encLen?encLen:len,hdr[] + 4,4)

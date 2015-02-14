@@ -1,7 +1,9 @@
+If 0
+	FileInstall,LiteZip.dll,Used to compress resources
 ZipFileRaw(fileIn,fileOut,password:=""){
-	static l:="LiteZip\Zip",lib:=LoadLibrary("LiteZip.dll"), init:=lib?"":MsgBox("Error: LiteZip.dll was not found"), CreateBuffer:=DynaCall(l "CreateBuffer","t*tuia")
-		 , AddZipBufferRaw:=DynaCall(l "AddBufferRaw","ttui"),GetMemory:=DynaCall(l "GetMemory","tt*ui*t*")
-		 , CloseZip:=DynaCall(l "Close","t"),AddZipBuffer:=DynaCall(l "AddBufferW","tstui")
+	static lib:=A_IsCompiled?ResourceLoadLibrary("LiteZip.dll"):MemoryLoadLibrary("LiteZip.dll"), init:=lib?"":MessageBox(0,"Error: LiteZip.dll was not found","Error"), CreateBuffer:=DynaCall(MemoryGetProcAddress(lib,"ZipCreateBuffer"),"t*tuia")
+		 , AddZipBufferRaw:=DynaCall(MemoryGetProcAddress(lib,"ZipAddBufferRaw"),"ttui"),GetMemory:=DynaCall(MemoryGetProcAddress(lib,"ZipGetMemory"),"tt*ui*t*")
+		 , CloseZip:=DynaCall(MemoryGetProcAddress(lib,"ZipClose"),"t"),AddZipBuffer:=DynaCall(MemoryGetProcAddress(lib,"ZipAddBufferW"),"tstui")
   If InStr(fileOut,"?") = 1{ ; ? => fileIn is a HEX, e.g. ZipFileRaw("0AC688FF000000AB9F","?C:\Temp\MyFile.txt")
     fileOut:=SubStr(fileOut,2),VarSetCapacity(file,sz:=StrLen(fileIn)//2)
     Loop sz
@@ -31,8 +33,11 @@ ZipFileRaw(fileIn,fileOut,password:=""){
 		  CryptBinaryToStringA(buffer,len,0x1,0,getvar(encLen:=0))
 		  ,VarSetCapacity(buff,encLen*2,0)
 		  ,CryptBinaryToStringA(buffer,len,0x1,&buff,getvar(encLen))
-		  ,encLen:=CryptAES(buff,encLen,password) ; encLen + 1???
-		  ,pBuff:=&buff
+		  if (!encLen:=CryptAES(buff,encLen,password)){ ; encLen + 1???
+			MsgBox Error CryptAES
+			return
+		  }
+		  pBuff:=&buff
 		} else pBuff:=buffer,encLen:=0
 		hdr:=Struct("UInt[5]",[0x4034b50,0,len,sz,encLen])
 		,HashData(pBuff,encLen?encLen:len,hdr[] + 4,4)
