@@ -95,8 +95,8 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 		
 		if !UpdateResource(module, 10, resname, 0x409, &filedata, filesize)
 			goto _FailEnd2
-		VarSetCapacity(filedata, 0)
 	}
+	VarSetCapacity(filedata, 0)
 	
 	gosub _EndUpdateResource
 	

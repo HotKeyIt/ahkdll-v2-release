@@ -78,7 +78,6 @@ EnumIcons(ExeFile, iconID)
 	
 	wCount := NumGet(pDirHeader+4, "UShort")
 	,iconIDs := []
-	
 	Loop, wCount
 	{
 		pResDirEntry := pResDir + (A_Index-1)*14

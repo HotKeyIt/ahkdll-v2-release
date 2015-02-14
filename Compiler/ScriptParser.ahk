@@ -39,13 +39,13 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 					if !StrStartsWith(tline, "@Ahk2Exe-")
 						continue
 					tline := SubStr(tline, 10)
-					if tline = "IgnoreBegin"
+					if (tline = "IgnoreBegin")
 						ignoreSection := true
-					else if tline != ""
+					else if (tline != "")
 						Options.directives.Push(tline)
 					continue
 				}
-				else if tline = ""
+				else if (tline = "")
 					continue
 				else if StrStartsWith(tline, "/*")
 				{
@@ -107,9 +107,9 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 						FileList.Push(IncludeFile)
 					PreprocessScript(ScriptText, IncludeFile, ExtraFiles, FileList, FirstScriptDir, Options, IgnoreErrors)
 				}
-			}else if !contSection && tline ~= "i)^FileInstall[, \t]"
+			}else if (!contSection && tline ~= "i)^FileInstall[, \t]")
 			{
-				if tline ~= "^\w+\s+(:=|+=|-=|\*=|/=|//=|\.=|\|=|&=|\^=|>>=|<<=)"
+				if tline ~= "^\w+\s+(:=|\+=|-=|\*=|/=|//=|\.=|\|=|&=|\^=|>>=|<<=)"
 					continue ; This is an assignment!
 				if !RegExMatch(tline, "i)^FileInstall[ \t]*[, \t][ \t]*([^,]+?)[ \t]*(,|$)", o) || o.1 ~= "[^``]`%" ; TODO: implement `, detection
 					Util_Error("Error: Invalid `"FileInstall`" syntax found. Note that the first parameter must not be specified using a continuation section.")
@@ -139,13 +139,15 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 		If !CLIMode,	SB_SetText("Auto-including any functions called from a library...")
 		ilibfile := A_Temp "\_ilib.ahk"
 		FileDelete, %ilibfile%
+		FileDelete, %ilibfile%.script
 		static AhkPath := A_IsCompiled ? A_ScriptDir "\..\AutoHotkey.exe" : A_AhkPath
 		AhkType := AHKType(AhkPath)
 		if AhkType = "FAIL"
 			Util_Error("Error: The AutoHotkey build used for auto-inclusion of library functions is not recognized.", 1, AhkPath)
 		if AhkType = "Legacy"
 			Util_Error("Error: Legacy AutoHotkey versions (prior to v1.1) are not allowed as the build used for auto-inclusion of library functions.", 1, AhkPath)
-		RunWait, "%AhkPath%" /iLib "%ilibfile%" /ErrorStdOut "%AhkScript%", %FirstScriptDir%, UseErrorLevel
+		FileAppend,%ScriptText%,%ilibfile%.script
+		RunWait, "%AhkPath%" /iLib "%ilibfile%" /ErrorStdOut "%ilibfile%.script", %FirstScriptDir%, UseErrorLevel
 		if (ErrorLevel = 2)
 			Util_Error("Error: The script contains syntax errors.")
 		If FileExist(ilibfile)

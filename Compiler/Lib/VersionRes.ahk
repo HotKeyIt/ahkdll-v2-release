@@ -21,8 +21,8 @@ class VersionRes
 		,this.DataSize := wValueLength
 		,this.IsText := wType
 		,DllCall("msvcrt\memcpy", "ptr", this.GetDataAddr(), "ptr", addr, "ptr", size, "cdecl"), addr += size, addr := (addr+3)&~3
-		if wType
-			ObjSetCapacity(this, "Data", -1)
+		; if wType
+			; ObjSetCapacity(this, "Data", -1)
 		while addr < addrLimit
 		{
 			size := NumGet(addr+0, "UShort")
