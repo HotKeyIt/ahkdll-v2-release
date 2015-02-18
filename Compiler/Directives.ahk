@@ -27,8 +27,8 @@ ProcessDirectives(ExeFile, module, cmds, IcoFile, UseCompression, UsePassword)
 		if (fn.MinParams-1) > nargs || nargs > (fn.MaxParams-1)
 			Util_Error("Error: Wrongly formatted directive:`n`n" cmdline)
 		if (o && o.1="AddResource")
-			fn[""](state, UseCompression, UsePassword, _args*)
-		else fn[""](state, _args*)
+			%fn%(state, UseCompression, UsePassword, _args*)
+		else %fn%(state, _args*)
 	}
 	
 	if !Util_ObjIsEmpty(state.verInfo)
@@ -94,9 +94,9 @@ Directive_UseSeparateTrayIcon(state)
 	state.NoAhkWithIcon := true
 }
 
-Directive_SetConsoleSubsys(state)
+Directive_SetConsoleApp(state)
 {
-	state.ConsoleSubsys := true
+	state.ConsoleApp := true
 }
 
 Directive_OutputPreproc(state, fileName)
@@ -120,7 +120,7 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 		Util_Error("Error: specified resource does not exist: " rsrc)
 	SplitPath, %resFile%, resFileName,, resExt
 	if !resName
-		resName := resFileName
+		resName := resFileName, defResName := true
 	StrUpper, resName, %resName%
 	if resType = ""
 	{
@@ -133,7 +133,12 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 			Util_Error("Error: Cursor resource adding is not supported yet!")
 		else if InStr(".htm.html.mht.","." resExt ".")
 			resType := 23 ; RT_HTML
-		else
+		else if resExt = manifest
+		{
+			resType := 24 ; RT_MANIFEST
+			if defResName
+				resName := 1
+		} else
 			resType := 10 ; RT_RCDATA
 	}
 	typeType := "str"

@@ -25,7 +25,7 @@ class VersionRes
 			; ObjSetCapacity(this, "Data", -1)
 		while addr < addrLimit
 		{
-			size := NumGet(addr+0, "UShort")
+			size := (NumGet(addr+0, "UShort") + 3) & ~3
 			,this.Children.Push(new VersionRes(addr))
 			,addr += size
 		}
