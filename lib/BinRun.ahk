@@ -1,7 +1,7 @@
 ; FileRead,file,*c %A_AhkPath%
 ; BinRun(&file,"`nMsgBox `% A_Argv.a",{a:"Hello World!"})
 
-BinRun(pData,cmdLine:="",cmdLineScript:="",ExeToUse:=""){
+BinRun(pData,cmdLine:="",cmdLineScript:="",Hide:=0,ExeToUse:=""){
   static IMAGE_DOS_HEADER :="WORD e_magic;WORD e_cblp;WORD e_cp;WORD e_crlc;WORD e_cparhdr;WORD e_minalloc;WORD e_maxalloc;WORD e_ss;WORD e_sp;WORD e_csum;WORD e_ip;WORD e_cs;WORD e_lfarlc;WORD e_ovno;WORD e_res[4];WORD e_oemid;WORD e_oeminfo;WORD e_res2[10];LONG e_lfanew"
   ,IMAGE_FILE_HEADER :="WORD Machine;WORD NumberOfSections;DWORD TimeDateStamp;DWORD PointerToSymbolTable;DWORD NumberOfSymbols;WORD SizeOfOptionalHeader;WORD Characteristics"
   ,IMAGE_DATA_DIRECTORY :="DWORD VirtualAddress;DWORD Size"
@@ -19,7 +19,7 @@ BinRun(pData,cmdLine:="",cmdLineScript:="",ExeToUse:=""){
   ,CONTEXT64:="DWORD64 P1Home;DWORD64 P2Home;DWORD64 P3Home;DWORD64 P4Home;DWORD64 P5Home;DWORD64 P6Home;DWORD ContextFlags;DWORD MxCsr;WORD SegCs;WORD SegDs;WORD SegEs;WORD SegFs;WORD SegGs;WORD SegSs;DWORD EFlags;DWORD64 Dr0;DWORD64 Dr1;DWORD64 Dr2;DWORD64 Dr3;DWORD64 Dr6;DWORD64 Dr7;DWORD64 Rax;DWORD64 Rcx;DWORD64 Rdx;DWORD64 Rbx;DWORD64Rsp;DWORD64 Rbp;DWORD64 Rsi;DWORD64 Rdi;DWORD64 R8;DWORD64 R9;DWORD64 R10;DWORD64 R11;DWORD64R12;DWORD64 R13;DWORD64 R14;DWORD64 R15;DWORD64 Rip;{BinRun(_XMM_SAVE_AREA32) FltSave;struct { BinRun(M128A) Header[2];BinRun(M128A) Legacy[8];BinRun(M128A) Xmm0;BinRun(M128A) Xmm1;BinRun(M128A) Xmm2;BinRun(M128A) Xmm3;BinRun(M128A) Xmm4;BinRun(M128A) Xmm5;BinRun(M128A) Xmm6;BinRun(M128A) Xmm7;BinRun(M128A) Xmm8;BinRun(M128A) Xmm9;BinRun(M128A) Xmm10;BinRun(M128A) Xmm11;BinRun(M128A) Xmm12;BinRun(M128A) Xmm13;BinRun(M128A) Xmm14;BinRun(M128A) Xmm15}};BinRun(M128A) VectorRegister[26];DWORD64 VectorControl;DWORD64 DebugControl;DWORD64 LastBranchToRip;DWORD64 LastBranchFromRip;DWORD64 LastExceptionToRip;DWORD64 LastExceptionFromRip"
   ,CONTEXT32:="DWORD ContextFlags;DWORD Dr0;DWORD Dr1;DWORD Dr2;DWORD Dr3;DWORD Dr6;DWORD Dr7;BinRun(FLOATING_SAVE_AREA) FloatSave;DWORD SegGs;DWORD SegFs;DWORD SegEs;DWORD SegDs;DWORD Edi;DWORD Esi;DWORD Ebx;DWORD Edx;DWORD Ecx;DWORD Eax;DWORD Ebp;DWORD Eip;DWORD SegCs;DWORD EFlags;DWORD Esp;DWORD SegSs;BYTE ExtendedRegisters[512]"
   ,IMAGE_NT_SIGNATURE:=17744,IMAGE_DOS_SIGNATURE:=23117,PAGE_EXECUTE_READWRITE:=64,CREATE_SUSPENDED:=4
-  ,MEM_COMMIT:=4096,MEM_RESERVE:=8192
+  ,MEM_COMMIT:=4096,MEM_RESERVE:=8192,STARTF_USESHOWWINDOW:=1
   ,h2o:="B29C2D1CA2C24A57BC5E208EA09E162F(){`nPLACEHOLDERB29C2D1CA2C24A57BC5E208EA09E162FVarSetCapacity(dmp,sz:=StrLen(hex)//2,0)`nLoopParse,`%hex`%`nIf (`"`"!=h.=A_LoopField) && !Mod(A_Index,2)`nNumPut(`"0x`" h,&dmp,A_Index/2-1,`"UChar`"),h:=`"`"`nreturn ObjLoad(&dmp,sz)`n}`n"
   If (Type(pData)!="Integer")
   {	
@@ -55,7 +55,6 @@ BinRun(pData,cmdLine:="",cmdLineScript:="",ExeToUse:=""){
     MsgBox ERROR: Signature not found
     return
   }
-
   
   If (A_PtrSize=8&&INH.OptionalHeader.magic=267) ; x86 on x64
     pNtHeader:=Struct(IMAGE_NT_HEADERS32,pData + IDH.e_lfanew),ctx:=Struct(Context32),Force32Bit:=1
@@ -67,7 +66,7 @@ BinRun(pData,cmdLine:="",cmdLineScript:="",ExeToUse:=""){
     pNtHeader:=INH,UsedExe:=ExeToUse?ExeToUse:A_IsCompiled?A_ScriptFullPath:A_AhkPath
     ,ctx:=Struct(A_PtrSize=8?Context64:Context32),ctx.ContextFlags := (A_PtrSize=8?0x100000:0x10000) | 0x2 ;CONTEXT_INTEGER
   pi:=Struct(PROCESS_INFORMATION)
-  ,si:=Struct(STARTUPINFO),si.cb:=sizeof(si)
+  ,si:=Struct(STARTUPINFO),si.cb:=sizeof(si),si.dwFlags:=HIDE?STARTF_USESHOWWINDOW:0 ;si.wShowWindow already set to 0
   if DllCall("CreateProcess","PTR",0,"STR","`"" UsedExe "`"" A_Space cmdLine (cmdLineScript?A_Space cmdLineScript:"")
             ,"PTR",0,"PTR",0,"int",0,"Int",CREATE_SUSPENDED,"PTR",0,"PTR",0,"PTR",si[],"PTR",pi[]){
       if DllCall((Force32Bit?"Wow64":"") "GetThreadContext","PTR",pi.hThread,"PTR", ctx[]){
