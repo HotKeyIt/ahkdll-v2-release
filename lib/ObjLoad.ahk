@@ -1,6 +1,8 @@
 ObjLoad(addr){
   ; Arrays to retrieve type and size from number type
-  static type:=["Char","UChar","Short","UShort","Int","UInt","Int64","UInt64","Double"],num:=[1,1,2,2,4,4,8,8,8]
+  static type,num
+  if !type
+    type:=["Char","UChar","Short","UShort","Int","UInt","Int64","UInt64","Double"],num:=[1,1,2,2,4,4,8,8,8]
   If addr+0=""{ ; FileRead Mode
     If !FileExist(addr),return
     else v:=FileRead("*c " addr)

@@ -146,7 +146,7 @@ TT_Delete(this){ ;delete all ToolTips (will be executed OnExit)
 	  ,DllCall("DestroyWindow","PTR",this[i].HWND)
 	  for id,tool in this[i].T
 		this[i].DelTool(tool[])
-	  this.Remove(i)
+	  this.Delete(i)
 	}
 	TT_GetIcon() ;delete ToolTips and Destroy all icon handles
 }
@@ -156,7 +156,7 @@ TT_Remove(T:=""){
 	for id,Tool in _
 	{
 	  If (T=Tool){
-			_[id]:=_[_.Length()],_.Remove(id)
+			_[id]:=_[_.Length()],_.Delete(id)
 			for id,tools in Tool.T
 			  Tool.DelTool(tools[])
 			Tool.DelTool(Tool.P[])
@@ -245,7 +245,7 @@ TT_DEL(T,Control){
     Return 0
   If (Type(Control+0)!="Integer")
     ControlGet,Control,Hwnd,,%Control%,% "ahk_id " t.P.hwnd
-   T.DELTOOL(T.T[Abs(Control)][]),T.T.Remove(Abs(Control))
+   T.DELTOOL(T.T[Abs(Control)][]),T.T.Delete(Abs(Control))
 }
 
 TT_Color(T,Color:="",Background:=""){

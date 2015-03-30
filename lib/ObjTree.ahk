@@ -298,7 +298,7 @@ ObjTree(ByRef obj,Title:="ObjTree",Options:="+ReadOnly +Resize,GuiShow=w640 h480
 				Return
 		EditObject[G]:=!TV_GetParent(TV_GetSelection())?newObj[G]:parents[G,TV_GetParent(TV_GetSelection())]
 		TV_GetText(_EditKey,TV_Item:=TV_GetSelection())
-		ObjRemove(EditObject[G],EditKey[G]:=_EditKey)
+		ObjDelete(EditObject[G],EditKey[G]:=_EditKey)
 		for key in EditObject[G]
 		{
 			EditKey[G]:=key
@@ -323,7 +323,7 @@ ObjTree(ByRef obj,Title:="ObjTree",Options:="+ReadOnly +Resize,GuiShow=w640 h480
 				for k in Objects[G]
 					toRemove[k]:=k
 				for k in toRemove
-					Objects[G].Remove(k)
+					Objects[G].Delete(k)
 				for k,v in newObj[G]
 					Objects[G,k]:=v
 			}
@@ -390,11 +390,11 @@ ObjTree(ByRef obj,Title:="ObjTree",Options:="+ReadOnly +Resize,GuiShow=w640 h480
 					If (A_MsgBoxResult="No")
 						Return TV_Modify(EditItem[G],"",EditKey[G])
 					Changed[G]:=1
-					EditObject[G,NewKey]:=EditObject[G,EditKey[G]],ObjRemove(EditObject[G],EditKey[G])
+					EditObject[G,NewKey]:=EditObject[G,EditKey[G]],ObjDelete(EditObject[G],EditKey[G])
 					return ObjTree_TVReload(EditObject[G],EditItem[G],NewKey,parents,G,hwnd)
 				} else {
 					Changed[G]:=1
-					EditObject[G,NewKey]:=EditObject[G,EditKey[G]],ObjRemove(EditObject[G],EditKey[G])
+					EditObject[G,NewKey]:=EditObject[G,EditKey[G]],ObjDelete(EditObject[G],EditKey[G])
 					return ObjTree_TVReload(EditObject[G],EditItem[G],NewKey,parents,G,hwnd)
 				}
 			} else	If (A_GuiEvent="k"){ ;Key Press
@@ -429,7 +429,7 @@ ObjTree(ByRef obj,Title:="ObjTree",Options:="+ReadOnly +Resize,GuiShow=w640 h480
 					Changed[G]:=1
 					EditObject[G]:=!TV_GetParent(TV_GetSelection())?newObj[G]:parents[G,TV_GetParent(TV_GetSelection())]
 					TV_GetText(_EditKey,TV_Item:=TV_GetSelection())
-					ObjRemove(EditObject[G],EditKey[G]:=_EditKey)
+					ObjDelete(EditObject[G],EditKey[G]:=_EditKey)
 					for key in EditObject[G]
 					{
 						EditKey[G]:=key
@@ -488,11 +488,11 @@ ObjTree(ByRef obj,Title:="ObjTree",Options:="+ReadOnly +Resize,GuiShow=w640 h480
 						Return
 					}
 					Changed[G]:=1
-					EditObject[G,NewKey]:=EditObject[G,EditKey[G]],ObjRemove(EditObject[G],EditKey[G])
+					EditObject[G,NewKey]:=EditObject[G,EditKey[G]],ObjDelete(EditObject[G],EditKey[G])
 					return ObjTree_TVReload(EditObject[G],EditItem[G],NewKey,parents,G,hwnd)
 				} else {
 					Changed[G]:=1
-					EditObject[G,NewKey]:=EditObject[G,EditKey[G]],ObjRemove(EditObject[G],EditKey[G])
+					EditObject[G,NewKey]:=EditObject[G,EditKey[G]],ObjDelete(EditObject[G],EditKey[G])
 					ObjTree_TVReload(EditObject[G],EditItem[G],NewKey,parents,G,hwnd)
 					return
 				}
@@ -644,8 +644,8 @@ ObjTree_Clone(obj,e:=0){
 			} else clone[n]:=e[v]
 		} else If IsObject(k) {
 			If !e.HasKey(k){
-				clone[n:=ObjTree_Clone(k,e)]:=e[k]:=clone[n],ObjRemove(clone,k)
-			} else clone[e[k]]:=v,ObjRemove(clone,k)
+				clone[n:=ObjTree_Clone(k,e)]:=e[k]:=clone[n],ObjDelete(clone,k)
+			} else clone[e[k]]:=v,ObjDelete(clone,k)
 		}
 	}
 	Return clone

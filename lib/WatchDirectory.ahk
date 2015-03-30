@@ -104,7 +104,7 @@ WatchDirectory(p*){
     If (max=1 && p.1=""){
       for i,folder in _
         DllCall("CloseHandle","Uint",__[folder].hD),DllCall("CloseHandle","Uint",__[folder].O.hEvent)
-        ,__.Remove(folder)
+        ,__.Delete(folder)
       _:=[]
       ,DirEvents:=Struct("HANDLE[1000]")
       ,DllCall("KillTimer","Uint",0,"Uint",timer)
@@ -124,7 +124,7 @@ WatchDirectory(p*){
         for i,folder in _
           If (dir1=SubStr(folder,1,-1))
             Return 0 ,DirEvents[i]:=DirEvents[_.Length()],DirEvents[_.Length()]:=0
-                   __.Remove(folder),_[i]:=_[_.Length()],_.Remove(i)
+                   __.Delete(folder),_[i]:=_[_.Length()],_.Delete(i)
         Return 0
       }
     }
@@ -180,7 +180,7 @@ WatchDirectory(p*){
 		return
     for LP in reconnect
     {
-      If (FileExist(__[LP].dir) && reconnect.Remove(LP)){
+      If (FileExist(__[LP].dir) && reconnect.Delete(LP)){
         DllCall("CloseHandle","Uint",__[LP].hD)
         __[LP].hD:=DllCall("CreateFile","Str",StrLen(__[LP].dir)=3?SubStr(__[LP].dir,1,2):__[LP].dir,"UInt",0x1,"UInt",0x1|0x2|0x4
                   ,"UInt",0,"UInt",0x3,"UInt",0x2000000|0x40000000,"UInt",0)

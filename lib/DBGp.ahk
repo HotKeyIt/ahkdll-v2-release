@@ -157,7 +157,7 @@ DBGp_Send(session, command, args:="", responseHandler:="")
         ; Remove the handler, since it is unlikely to be called. This
         ; may be unnecessary since it's likely the session is ending.
         if responseHandler
-            session.handlers.Remove(session.lastID, 999999)
+            session.handlers.Delete(session.lastID, 999999)
 		return DBGp_WSAE()
     }
 	return 0
@@ -171,7 +171,7 @@ DBGp_Receive(session, ByRef packet)
 	while !session.responseQueue.Length()
         Sleep 10
     Critical % WasCritical
-    packet := session.responseQueue.Remove(1)
+    packet := session.responseQueue.Delete(1)
 	if RegExMatch(packet, "<error\s+code=`"\K.*?(?=`")", DBGp_error_code)
 		return DBGp_E(DBGp_error_code.Value)
 	return 0 ; Success.
@@ -495,7 +495,7 @@ DBGp_HandleResponsePacket(session, ByRef packet)
         && (handler := session.handlers[transaction_id.Value+0])
     {
         ; Call the callback previously set for this transaction.
-        session.handlers.Remove(transaction_id.Value+0, 999999)
+        session.handlers.Delete(transaction_id.Value+0, 999999)
         DBGp_CallHandler(handler, session, packet)
     }
     else
@@ -536,7 +536,7 @@ DBGp_AddSession(session)
 ; Internal: Remove disconnecting session from list.
 DBGp_RemoveSession(session)
 {
-    DBGp_Session.sockets.Remove(session.Socket, 999999)
+    DBGp_Session.sockets.Delete(session.Socket, 999999)
 }
 
 ; Internal: Find session structure given its socket handle.

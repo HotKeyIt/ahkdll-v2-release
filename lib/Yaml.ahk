@@ -130,7 +130,7 @@
     If (__CNT)||(_LVL>__LVL&&(__KEY!=""&&_KEY="")&&(__VAL!=""||__SCA))||(__SEQ&&__SCA)
       _KEY:="",_VAL:=""
     If __CNT||(_LVL>__LVL&&(__KEY!=""||(__SEQ&&(__LFL||__SCA)&&!Yaml_IsSeqMap(__LFL)))&&!(_SEQ||_KEY!="")){
-      If (OBJ:=ObjLength(LVL%__LVL%[""]))&&IsObject(LVL%__LVL%["",OBJ])&&__SEQ{
+      If LVL%__LVL%[""] && (OBJ:=ObjLength(LVL%__LVL%[""]))&&IsObject(LVL%__LVL%["",OBJ])&&__SEQ{
         If __KEY!=""
           Yaml_Continue(LVL%__LVL%["",Obj],__key,_LFL,__SCA),__CNT:=Yaml_SeqMap(LVL%__LVL%["",OBJ],__KEY,LVL%__LVL%["",OBJ,__KEY])?"":__CNT
         else Yaml_Continue(LVL%__LVL%[""],Obj,_LFL,__SCA,__SEQ),__CNT:=Yaml_SeqMap(LVL%__LVL%[""],OBJ,LVL%__LVL%["",OBJ],__SEQ)?"":__CNT
@@ -182,7 +182,7 @@
           ObjPush(LVL%_LVL%[""],_LFL)
       }
       If !ObjLength(LVL%_LVL%[""])
-        ObjRemove(LVL%_LVL%,"")
+        ObjDelete(LVL%_LVL%,"")
     } else if _KEY!=""{
       If __SEQ&&_LVL>__LVL{
         If (OBJ:=ObjLength(LVL%_PRV%[""]))&&IsObject(LVL%_PRV%["",OBJ]){
