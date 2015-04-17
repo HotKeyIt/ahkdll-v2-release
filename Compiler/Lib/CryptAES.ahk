@@ -1,6 +1,7 @@
 CryptAES(ByRef lp,sz,pw,e:=1,SID:=256){
 	static AES_128:=0x660E,AES_192:=1+AES_128,AES_256:=1+AES_192,SHA1:=1+0x8003 ; MD5
-	if e,	VarSetCapacity(lp,sz+16)
+	if e
+		VarSetCapacity(lp,sz+16)
 	If !CryptAcquireContextW(getvar(hP:=0),0,0,24,0xF0000000) ;PROV_RSA_AES, CRYPT_VERIFYCONTEXT
 	|| !CryptCreateHash(hP,SHA1,0,0,getvar(H:=0) )
 	|| !CryptHashData(H,&pw,StrLen(pw)*2,0)

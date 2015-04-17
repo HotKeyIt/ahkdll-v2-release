@@ -23,8 +23,11 @@ ZipFileRaw(fileIn,fileOut,password:=""){
     return
   }
 	CreateBuffer[hzip,0,sz*2,0] ; *2 to make sure we have enough room
-	,AddZipBufferRaw[hzip,pData,sz] , result:=GetMemory[hzip,buffer,len,base]
-    ,FileExist(fileout)?FileDelete(fileout):"", handle := CreateFile(fileout,1073741824,0,0,2,128) ; GENERIC_WRITE,,,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL
+	,AddZipBufferRaw[hzip,pData, sz ] , result:=GetMemory[ hzip, buffer, len, base ]
+    if (len>=sz)
+		len:=sz,buffer:=pData
+	if FileExist(fileout),FileDelete(fileout)
+	handle := CreateFile(fileout,1073741824,0,0,2,128) ; GENERIC_WRITE,,,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL
 	if (handle < 1)
 		MsgBox Error Open File %fileout%
 	else
