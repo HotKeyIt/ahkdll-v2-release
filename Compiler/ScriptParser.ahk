@@ -137,7 +137,7 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 	Loop, % !!IsFirstScript ; equivalent to "if IsFirstScript" except you can break from the block
 	{
 		If !CLIMode,	SB_SetText("Auto-including any functions called from a library...")
-		ilibfile := A_Temp "\_ilib.ahk"
+		ilibfile := FirstScriptDir "\FAF4D55FBB00419A9ECFFE26ED983E93.ahk"
 		FileDelete, %ilibfile%
 		FileDelete, %ilibfile%.script
 		static AhkPath := A_IsCompiled ? A_ScriptDir "\..\AutoHotkey.exe" : A_AhkPath
@@ -153,6 +153,7 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 		If FileExist(ilibfile)
 			PreprocessScript(ScriptText, ilibfile, ExtraFiles, FileList, FirstScriptDir, Options)
 		FileDelete, %ilibfile%
+		FileDelete, %ilibfile%.script
 		ScriptText:=SubStr(ScriptText, 1,-1) ; remove trailing newline
 	}
 	
