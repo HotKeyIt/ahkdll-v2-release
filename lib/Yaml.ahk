@@ -1,4 +1,4 @@
-﻿Yaml(YamlText,IsFile:=1,YamlObj:=0){ ; Version 1.0.0.14 http://www.autohotkey.com/forum/viewtopic.php?t=70559
+﻿Yaml(YamlText,IsFile:=1,YamlObj:=0){ ; Version 1.0.0.16 http://www.autohotkey.com/forum/viewtopic.php?t=70559
   static
   static BackupVars:="LVL,SEQ,KEY,SCA,TYP,VAL,CMT,LFL,CNT",IncompleteSeqMap
   local maxLVL:=0,LastContObj:=0,LastContKEY:=0,LinesAdded:=0,_LVLChanged:=0
@@ -85,9 +85,12 @@
 			_VAL:=Yaml_UnQuoteIfNeed(_VAL)
     ;determine current level
     _LVL:=Yaml_S2I(_LVL)
-    If _LVL-__LVL>(__SEQ?2:1)||(_LVL>__LVL&&_LVLChanged) ;&&!(__SEQ&&__KEY!=""&&_KEY!=""))
-      _LVL:=__LVL+1+(__SEQ?1:0),_LVLChanged:=_LVL ;__LVL%_LVL%:=__LVL%_NXT%
-    else if _LVLChanged
+    If _LVL-__LVL>1||(_LVL>__LVL&&_LVLChanged) ;&&!(__SEQ&&__KEY!=""&&_KEY!="")) ; (__SEQ?2:1)
+    {
+      Loop % (_LVLChanged?_LVL-_LVLChanged:_LVL-__LVL-1)
+        LoopField:=SubStr(LoopField,SubStr(LoopField,1,1)=A_Tab?1:2)
+      _LVL:=_LVLChanged?_LVLChanged:__LVL+1,_LVLChanged:=_LVLChanged?_LVLChanged:_LVL ;__LVL%_LVL%:=__LVL%_NXT% ; (__SEQ?2:1)
+    } else if _LVLChanged
       _LVL:=_LVLChanged
     else _LVLChanged:=0
     If maxLVL<_LVL

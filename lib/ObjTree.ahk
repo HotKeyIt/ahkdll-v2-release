@@ -1,5 +1,5 @@
-﻿; MsgBox % ObjTree([["a","b"],[1,2]])
-; ExitApp
+﻿MsgBox % ObjTree([["a","b"],[1,2]])
+ExitApp
 #include *i <LV>
 ;~ #include <_Struct>
 
@@ -313,6 +313,7 @@ ObjTree(ByRef obj,Title:="ObjTree",Options:="+ReadOnly +Resize,GuiShow=w640 h480
 		If A_Gui
 			G:=A_Gui+0
 		Gui,%G%:+OwnDialogs
+		OnMessage(WM_NOTIFY,hWnd[G],"ObjTree","")
 		If (ReadOnly[G]="-ReadOnly" && Changed[G]){
 			MsgBox,262147,% "Save Changes",% "Would you like to save changes?"
 			If (A_MsgBoxResult = "Cancel")
@@ -367,7 +368,7 @@ ObjTree(ByRef obj,Title:="ObjTree",Options:="+ReadOnly +Resize,GuiShow=w640 h480
 			G:=A_Gui+0
 		Gui,%G%:Default
 		Gui,TreeView, ObjTreeTreeView%G%
-		If (ReadOnly[G]="-ReadOnly"){
+		If (IsObject(ReadOnly) && ReadOnly[G]="-ReadOnly"){
 			If (A_GuiEvent=="E"||(A_GuiEvent="k"&&A_EventInfo=113)){
 				If (A_GuiEvent="k")
 					EditItem[G]:=TV_GetSelection()
@@ -442,7 +443,7 @@ ObjTree(ByRef obj,Title:="ObjTree",Options:="+ReadOnly +Resize,GuiShow=w640 h480
 				DllCall("InvalidateRect", "ptr", hwnd[G], "ptr", 0, "int", true)
 				Return
 			}
-		} else if InStr(",k,E,e,","," A_GuiEvent ",",1)
+		} else if InStr(",k,e,","," A_GuiEvent ",")
 			Return
 		if (A_EventInfo=0)
 			Return

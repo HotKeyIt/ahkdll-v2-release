@@ -115,7 +115,7 @@ TT(options:="",text:="",title:=""){
   ,T.SETMAXTIPWIDTH(MAXWIDTH?MAXWIDTH:A_ScreenWidth)
   If !(AUTOPOP INITIAL RESHOW)
     T.SETDELAYTIME()
-  else T.SETDELAYTIME(2,AUTOPOP?AUTOPOP*1000:-1),T.SETDELAYTIME(3,INITIAL?INITIAL*1000:-1),T.SETDELAYTIME(1,RESHOW?RESHOW*1000:-1)
+  else T.SETDELAYTIME(2,AUTOPOP?AUTOPOP:-1),T.SETDELAYTIME(3,INITIAL?INITIAL:-1),T.SETDELAYTIME(1,RESHOW?RESHOW:-1)
   T.fulltext:=text,T.maintext:=RegExReplace(text,"<a\K[^<]*?>",">")
   If OnClick
     ParseLinks:=1
@@ -292,7 +292,7 @@ TT_GetIcon(File:="",Icon_:=1){
   }
 	If CR:=InStr(File,"`r") || LF:=InStr(File,"`n")
 		File:=SubStr(file,1,CR<LF?CR-1:LF-1) ; this is a local parameter so we can change the memory 
-  If hIcon[File,Icon_]
+  If IsObject(hIcon[File])&&hIcon[File,Icon_]
     Return hIcon[file,Icon_] 
   else if (hIcon[File] && !IsObject(hIcon[File]))
     return hIcon[File]

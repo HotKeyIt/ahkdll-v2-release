@@ -1,6 +1,6 @@
 /*
 SetWinDelay,-1
-OnExit, GuiClose
+OnExit("GuiClose")
 
 WatchFolders:="C:\Temp*|%A_Temp%*|%A_Desktop%|%A_DesktopCommon%|%A_MyDocuments%*|%A_ScriptDir%|%A_WinDir%*"
 Gui,+Resize
@@ -46,7 +46,7 @@ Return
 Add:
 Gui,+OwnDialogs
 dir:=""
-FileSelectFolder,dir,,3,Select directory to watch for
+DirSelect,dir,,3,Select directory to watch for
 If !dir
    Return
 SetTimer,SetMsgBoxButtons,-10
@@ -78,10 +78,13 @@ ReportChanges(this,from,to){
    TotalChanges++
    SB_SetText("Changes Registered " . TotalChanges)
 }
-
+GuiClose(){
+  WatchDirectory("") ;Stop Watching Directory = delete all directories
+  ExitApp
+}
 GuiClose:
-WatchDirectory("") ;Stop Watching Directory = delete all directories
-ExitApp
+GuiClose()
+
 */
 ;~ #include <Struct>
 WatchDirectory(p*){
@@ -204,9 +207,8 @@ WatchDirectory(p*){
         FNI:=A_Index>1?(Struct(FILE_NOTIFY_INFORMATION,FNI[""]+FNI.NextEntryOffset)):(Struct(FILE_NOTIFY_INFORMATION,__[LP].FNI[""]))
         If (FNI.Action < 0x6){
           FileName:=__[LP].dir . StrGet(FNI.FileName[""],FNI.FileNameLength/2,"UTF-16")
-          If (FNI.Action=FILE_ACTION_RENAMED_OLD_NAME)
-            FileFromOptional:=FileName
-          If (__[LP].FLT="" || RegExMatch(FileName,__[LP].FLT) || FileFrom)
+          If ((FNI.Action=FILE_ACTION_RENAMED_OLD_NAME && FileFromOptional:=FileName) || __[LP].FLT=""
+					  || RegExMatch(FileName,__[LP].FLT) || RegExMatch(FileFrom,__[LP].FLT) || InStr(FileExist(FileName),"D"))
             If (FNI.Action=FILE_ACTION_ADDED){
               FileTo:=FileName
             } else If (FNI.Action=FILE_ACTION_REMOVED){
