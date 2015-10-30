@@ -115,7 +115,7 @@ TT(options:="",text:="",title:=""){
   ,T.SETMAXTIPWIDTH(MAXWIDTH?MAXWIDTH:A_ScreenWidth)
   If !(AUTOPOP INITIAL RESHOW)
     T.SETDELAYTIME()
-  else T.SETDELAYTIME(2,AUTOPOP?AUTOPOP*1000:-1),T.SETDELAYTIME(3,INITIAL?INITIAL*1000:-1),T.SETDELAYTIME(1,RESHOW?RESHOW*1000:-1)
+  else T.SETDELAYTIME(2,AUTOPOP?AUTOPOP:-1),T.SETDELAYTIME(3,INITIAL?INITIAL:-1),T.SETDELAYTIME(1,RESHOW?RESHOW:-1)
   T.fulltext:=text,T.maintext:=RegExReplace(text,"<a\K[^<]*?>",">")
   If OnClick
     ParseLinks:=1
@@ -146,7 +146,7 @@ TT_Delete(this){ ;delete all ToolTips (will be executed OnExit)
 	  ,DllCall("DestroyWindow","PTR",this[i].HWND)
 	  for id,tool in this[i].T
 		this[i].DelTool(tool[])
-	  this.Remove(i)
+	  this.Delete(i)
 	}
 	TT_GetIcon() ;delete ToolTips and Destroy all icon handles
 }
@@ -156,7 +156,7 @@ TT_Remove(T:=""){
 	for id,Tool in _
 	{
 	  If (T=Tool){
-			_[id]:=_[_.Length()],_.Remove(id)
+			_[id]:=_[_.Length()],_.Delete(id)
 			for id,tools in Tool.T
 			  Tool.DelTool(tools[])
 			Tool.DelTool(Tool.P[])
@@ -245,7 +245,7 @@ TT_DEL(T,Control){
     Return 0
   If (Type(Control+0)!="Integer")
     ControlGet,Control,Hwnd,,%Control%,% "ahk_id " t.P.hwnd
-   T.DELTOOL(T.T[Abs(Control)][]),T.T.Remove(Abs(Control))
+   T.DELTOOL(T.T[Abs(Control)][]),T.T.Delete(Abs(Control))
 }
 
 TT_Color(T,Color:="",Background:=""){
@@ -292,7 +292,7 @@ TT_GetIcon(File:="",Icon_:=1){
   }
 	If CR:=InStr(File,"`r") || LF:=InStr(File,"`n")
 		File:=SubStr(file,1,CR<LF?CR-1:LF-1) ; this is a local parameter so we can change the memory 
-  If hIcon[File,Icon_]
+  If IsObject(hIcon[File])&&hIcon[File,Icon_]
     Return hIcon[file,Icon_] 
   else if (hIcon[File] && !IsObject(hIcon[File]))
     return hIcon[File]
@@ -311,7 +311,7 @@ TT_GetIcon(File:="",Icon_:=1){
     Return hIcon[File,Icon_]:=Icon
   } else if (Icon_=""){
     If !FileExist(File){ 
-      if (Type(File+0)="Integer") ;assume Hex string
+      if RegExMatch(File,"^[0-9A-Fa-f]+$") ;assume Hex string
       {
         nSize := StrLen(File)//2
         VarSetCapacity( Buffer,nSize ) 

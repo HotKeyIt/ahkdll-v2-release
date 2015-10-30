@@ -71,7 +71,7 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 	}
 	
 	If !CLIMode,	SB_SetText("Adding: Master Script")
-	if !UpdateResource(module, 10, ">AUTOHOTKEY SCRIPT<", 0x409, &BinScriptBody, BinScriptBody_Len)
+	if !UpdateResource(module, 10, "E4847ED08866458F8DD35F94B37001C0", 0x409, &BinScriptBody, BinScriptBody_Len)
 		goto _FailEnd
 		
 	for each,file in ExtraFiles

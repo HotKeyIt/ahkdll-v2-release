@@ -23,9 +23,9 @@ ZipFileRaw(fileIn,fileOut,password:=""){
     return
   }
 	CreateBuffer[hzip,0,sz*2,0] ; *2 to make sure we have enough room
-	,AddZipBufferRaw[hzip,pData, sz ] , result:=GetMemory[ hzip, buffer, len, base ]
-    if (len>=sz)
-		len:=sz,buffer:=pData
+	,AddZipBufferRaw[hzip,pData,sz] , result:=GetMemory[ hzip, buffer, len, base ]
+  if (len>=sz)
+		len:=sz,DllCall("UnmapViewOfFile","PTR",buffer),DllCall("CloseHandle","PTR",base),buffer:=pData
 	if FileExist(fileout),FileDelete(fileout)
 	handle := CreateFile(fileout,1073741824,0,0,2,128) ; GENERIC_WRITE,,,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL
 	if (handle < 1)
@@ -34,9 +34,9 @@ ZipFileRaw(fileIn,fileOut,password:=""){
 	{
 		if password {
 		  CryptBinaryToStringA(buffer,len,0x1,0,getvar(encLen:=0))
-		  ,VarSetCapacity(buff,encLen*2,0)
+		  ,VarSetCapacity(buff,16 + encLen,0)
 		  ,CryptBinaryToStringA(buffer,len,0x1,&buff,getvar(encLen))
-		  if (!encLen:=CryptAES(buff,encLen,password)){ ; encLen + 1???
+		  if (!encLen:=CryptAES(buff,encLen+1,password)){ ; encLen + 1 due to terminating character returned by first call to CryptBinaryToStringA
 			MsgBox Error CryptAES
 			return
 		  }
@@ -50,7 +50,9 @@ ZipFileRaw(fileIn,fileOut,password:=""){
 			MsgBox Error WriteFile
 		DllCall("CloseHandle",PTR,handle)
 	}
-	return DllCall("UnmapViewOfFile",PTR,buffer),DllCall("CloseHandle",PTR,base),	sizeof(hdr) + (encLen?encLen:len)
+	if (buffer!=pData)
+		DllCall("UnmapViewOfFile","PTR",buffer),DllCall("CloseHandle","PTR",base)
+	return sizeof(hdr) + (encLen?encLen:len)
 }
 
 /*

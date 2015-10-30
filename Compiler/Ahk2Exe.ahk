@@ -337,7 +337,8 @@ Gui, +OwnDialogs
 FileSelect, ov, S16, %LastExeDir%, Save As, Executable files (*.exe;*.dll)
 if ErrorLevel
 	return
-if !RegExMatch(ov, "\.[^\\/]+$")
+SplitPath, %ov%,,, ovExt
+if !StrLen(ovExt) ;~ append a default file extension is none specified
 	ov .= ".exe"
 GuiControl,, ExeFile, %ov%
 return

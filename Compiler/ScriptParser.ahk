@@ -149,7 +149,11 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 		FileAppend,%ScriptText%,%ilibfile%.script
 		RunWait, "%AhkPath%" /iLib "%ilibfile%" /ErrorStdOut "%ilibfile%.script", %FirstScriptDir%, UseErrorLevel
 		if (ErrorLevel = 2)
+		{		
+			FileDelete, %ilibfile%
+			FileDelete, %ilibfile%.script
 			Util_Error("Error: The script contains syntax errors.")
+		}
 		If FileExist(ilibfile)
 			PreprocessScript(ScriptText, ilibfile, ExtraFiles, FileList, FirstScriptDir, Options)
 		FileDelete, %ilibfile%
