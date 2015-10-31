@@ -469,7 +469,7 @@ Util_Error(txt, doexit := 1, extra := "")
 	}
 	
 	if extra
-		txt .= "`n`nSpecifically: " extra
+		txt .= "`n`n" extra
 	
 	SetCursor(LoadCursor(0, 32512)) ;Util_HideHourglass()
 	MsgBox, 16, Ahk2Exe Error, % txt

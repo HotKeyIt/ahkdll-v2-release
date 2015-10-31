@@ -140,6 +140,7 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 		ilibfile := FirstScriptDir "\FAF4D55FBB00419A9ECFFE26ED983E93.ahk"
 		FileDelete, %ilibfile%
 		FileDelete, %ilibfile%.script
+		FileDelete, %ilibfile%.error
 		static AhkPath := A_IsCompiled ? A_ScriptDir "\..\AutoHotkey.exe" : A_AhkPath
 		AhkType := AHKType(AhkPath)
 		if AhkType = "FAIL"
@@ -147,17 +148,20 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 		if AhkType = "Legacy"
 			Util_Error("Error: Legacy AutoHotkey versions (prior to v1.1) are not allowed as the build used for auto-inclusion of library functions.", 1, AhkPath)
 		FileAppend,%ScriptText%,%ilibfile%.script
-		RunWait, "%AhkPath%" /iLib "%ilibfile%" /ErrorStdOut "%ilibfile%.script", %FirstScriptDir%, UseErrorLevel
+    RunWait, % "`"" A_Comspec "`" /C `"`"" AhkPath "`" /iLib `"" ilibfile "`" /ErrorStdOut `"" ilibfile ".script`" 2>`"" ilibfile ".error`"`"", %FirstScriptDir%, HIDE UseErrorLevel
 		if (ErrorLevel = 2)
 		{		
 			FileDelete, %ilibfile%
 			FileDelete, %ilibfile%.script
-			Util_Error("Error: The script contains syntax errors.")
+			FileRead,script_error,%ilibfile%.error
+			FileDelete, %ilibfile%.error
+			Util_Error("Error: The script contains syntax errors.",true,SubStr(script_error,StrLen(ilibfile) + 9))
 		}
 		If FileExist(ilibfile)
 			PreprocessScript(ScriptText, ilibfile, ExtraFiles, FileList, FirstScriptDir, Options)
 		FileDelete, %ilibfile%
 		FileDelete, %ilibfile%.script
+		FileDelete, %ilibfile%.error
 		ScriptText:=SubStr(ScriptText, 1,-1) ; remove trailing newline
 	}
 	
