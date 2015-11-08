@@ -11,7 +11,7 @@
 #Include <_Struct>
 InjectAhkDll(PID,dll:="AutoHotkey.dll",script:=0){
   static PROCESS_ALL_ACCESS:=0x1F0FFF,MEM_COMMIT := 0x1000,MEM_RELEASE:=0x8000,PAGE_EXECUTE_READWRITE:=64
-        ,hKernel32:=DllCall("LoadLibrary","Str","kernel32.dll"),LoadLibraryA:=DllCall("GetProcAddress","PTR",hKernel32,"AStr","LoadLibraryA","PTR")
+        ,hKernel32:=DllCall("LoadLibrary","Str","kernel32.dll","PTR"),LoadLibraryA:=DllCall("GetProcAddress","PTR",hKernel32,"AStr","LoadLibraryA","PTR")
         ,base:={__Call:"InjectAhkDll",__Delete:"InjectAhkDll"},FreeLibrary:=DllCall("GetProcAddress","PTR",hKernel32,"AStr","FreeLibrary","PTR")
   static TH32CS_SNAPMODULE:=0x00000008,INVALID_HANDLE_VALUE:=-1
         ,MAX_PATH:=260,MAX_MODULE_NAME32:=255,ModuleName:="",init:=VarSetCapacity(ModuleName,MAX_PATH*(A_IsUnicode?2:1))
@@ -34,19 +34,19 @@ InjectAhkDll(PID,dll:="AutoHotkey.dll",script:=0){
     ProcessExist,proc,% PID.PID
     If !proc
       return
-    hProc := DllCall("OpenProcess", "UInt", PROCESS_ALL_ACCESS, "Int",0, "UInt", PID.PID)
+    hProc := DllCall("OpenProcess", "UInt", PROCESS_ALL_ACCESS, "Int",0, "UInt", PID.PID,"PTR")
     If !hProc
       return DllCall("MessageBox","PTR",0,"Str","Could not open process for PID: " PID.PID,"STR","Error","UInt",0)
     
     if (!script) ; Free Library in remote process (object is being deleted)
     {
       ; Terminate the thread in ahkdll
-      hThread := DllCall("CreateRemoteThread", "PTR", hProc, "UInt", 0, "UInt", 0, "PTR", PID.ahkTerminate, "PTR", 0, "UInt", 0, "UInt", 0)
+      hThread := DllCall("CreateRemoteThread", "PTR", hProc, "PTR", 0, "PTR", 0, "PTR", PID.ahkTerminate, "PTR", 0, "UInt", 0, "PTR", 0,"PTR")
       DllCall("WaitForSingleObject", "PTR", hThread, "UInt", 0xFFFFFFFF)
       ,DllCall("CloseHandle", "PTR", hThread)
       
       ; Free library in remote process
-      hThread := DllCall("CreateRemoteThread", "PTR", hProc, "UInt", 0, "UInt", 0, "PTR", FreeLibrary, "PTR", PID.hModule, "UInt", 0, "UInt", 0)
+      hThread := DllCall("CreateRemoteThread", "PTR", hProc, "UInt", 0, "UInt", 0, "PTR", FreeLibrary, "PTR", PID.hModule, "UInt", 0, "UInt", 0,"PTR")
       DllCall("WaitForSingleObject", "PTR", hThread, "UInt", 0xFFFFFFFF)
       ,DllCall("CloseHandle", "PTR", hThread),DllCall("CloseHandle", "PTR", hProc)
       return
@@ -57,14 +57,14 @@ InjectAhkDll(PID,dll:="AutoHotkey.dll",script:=0){
     
     ; Reserve memory in remote process where our script will be saved
     If !pBufferRemote := DllCall("VirtualAllocEx", "Ptr", hProc, "Ptr", 0, "PTR", nScriptLength, "UInt", MEM_COMMIT, "UInt", PAGE_EXECUTE_READWRITE, "Ptr")
-      return DllCall("MessageBox","PTR",0,"Str","Could not reseve memory to execute script in process.","STR","Error","UInt",0)
+      return DllCall("MessageBox","PTR",0,"Str","Could not reseve memory for process.","STR","Error","UInt",0)
             ,DllCall("CloseHandle", "PTR", hProc)
   
     ; Write script to remote process memory
     DllCall("WriteProcessMemory", "Ptr", hProc, "Ptr", pBufferRemote, "Ptr", &nScript, "PTR", nScriptLength, "Ptr", 0)
     
     ; Start execution of code
-    hThread := DllCall("CreateRemoteThread", "PTR", hProc, "UInt", 0, "UInt", 0, "PTR", PID.ahkExec, "PTR", pBufferRemote, "UInt", 0, "UInt", 0)
+    hThread := DllCall("CreateRemoteThread", "PTR", hProc, "PTR", 0, "PTR", 0, "PTR", PID.ahkExec, "PTR", pBufferRemote, "UInt", 0, "PTR", 0,"PTR")
     If !hThread
     {
       DllCall("VirtualFreeEx","PTR",hProc,"PTR",pBufferRemote,"PTR",nScriptLength,MEM_RELEASE)
@@ -87,12 +87,12 @@ InjectAhkDll(PID,dll:="AutoHotkey.dll",script:=0){
   } else if !hDll:=DllCall("LoadLibrary","Str",dll,"PTR")
     return DllCall("MessageBox","PTR",0,"Str","Could not find " dll " library.","STR","Error","UInt",0),DllCall("CloseHandle", "PTR", hProc)
   else {
-    hProc := DllCall("OpenProcess","UInt", PROCESS_ALL_ACCESS, "Int",0,"UInt", DllCall("GetCurrentProcessId"))
+    hProc := DllCall("OpenProcess","UInt", PROCESS_ALL_ACCESS, "Int",0,"UInt", DllCall("GetCurrentProcessId"),"PTR")
     DllCall("GetModuleFileName","PTR",hDll,"PTR",&ModuleName,"UInt",MAX_PATH)
     DllCall("CloseHandle","PTR",hProc)
   }
   ; Open Process to PID
-  hProc := DllCall("OpenProcess", "UInt", PROCESS_ALL_ACCESS, "Int",0, "UInt", PID)
+  hProc := DllCall("OpenProcess", "UInt", PROCESS_ALL_ACCESS, "Int",0, "UInt", PID,"PTR")
   If !hProc
     return DllCall("MessageBox","PTR",0,"Str","Could not open process for PID: " PID,"STR","Error","UInt",0)
   
@@ -109,7 +109,7 @@ InjectAhkDll(PID,dll:="AutoHotkey.dll",script:=0){
   
   ; Start new thread loading our dll
   
-  hThread:=DllCall("CreateRemoteThread","PTR",hProc,"UInt",0,"UInt",0,"PTR",LoadLibraryA,"PTR",pBufferRemote,"UInt",0,"UInt",0)
+  hThread:=DllCall("CreateRemoteThread","PTR",hProc,"PTR",0,"PTR",0,"PTR",LoadLibraryA,"PTR",pBufferRemote,"UInt",0,"PTR",0,"PTR")
   If !hThread {
     DllCall("VirtualFreeEx","PTR",hProc,"PTR",pBufferRemote,"PTR",nDirLength,"Uint",MEM_RELEASE)
     ,DllCall("CloseHandle", "PTR", hProc)
@@ -127,7 +127,7 @@ InjectAhkDll(PID,dll:="AutoHotkey.dll",script:=0){
   If (A_PtrSize=8){ ; use different method to retrieve base address because GetExitCodeThread returns DWORD only
     hModule:=0,me32 := new _Struct(_MODULEENTRY32)
     ;  Take a snapshot of all modules in the specified process.
-    hModuleSnap := DllCall("CreateToolhelp32Snapshot","UInt", TH32CS_SNAPMODULE,"UInt", PID )
+    hModuleSnap := DllCall("CreateToolhelp32Snapshot","UInt", TH32CS_SNAPMODULE,"UInt", PID, "PTR" )
     if( hModuleSnap != INVALID_HANDLE_VALUE ){
       ; reset hModule and set the size of the structure before using it.
       me32.dwSize := sizeof(_MODULEENTRY32)
@@ -171,7 +171,7 @@ InjectAhkDll(PID,dll:="AutoHotkey.dll",script:=0){
   } else pBufferScript:=0
   
   ; Run ahkdll function in remote thread
-  hThread := DllCall("CreateRemoteThread","PTR",hProc,"UInt",0,"UInt",0,"PTR",ahktextdll,"PTR",pBufferScript,"UInt",0,"UInt",0)
+  hThread := DllCall("CreateRemoteThread","PTR",hProc,"PTR",0,"PTR",0,"PTR",ahktextdll,"PTR",pBufferScript,"PTR",0,"UInt",0,"PTR")
   If !hThread { ; could not start ahkdll in remote process
     ; Free memory used for passing dll path to remote thread
     DllCall("VirtualFreeEx","PTR",hProc,"PTR",pBufferRemote,"PTR",nDirLength,MEM_RELEASE)
