@@ -8,7 +8,6 @@
 ;~ MsgBox ModuleHandle of Another Process: %Clipboard%
 ;~ ExitApp
 
-#Include <_Struct>
 InjectAhkDll(PID,dll:="AutoHotkey.dll",script:=0){
   static PROCESS_ALL_ACCESS:=0x1F0FFF,MEM_COMMIT := 0x1000,MEM_RELEASE:=0x8000,PAGE_EXECUTE_READWRITE:=64
         ,hKernel32:=DllCall("LoadLibrary","Str","kernel32.dll","PTR"),LoadLibraryA:=DllCall("GetProcAddress","PTR",hKernel32,"AStr","LoadLibraryA","PTR")
@@ -125,7 +124,7 @@ InjectAhkDll(PID,dll:="AutoHotkey.dll",script:=0){
   DllCall("CloseHandle", "PTR", hThread)
   
   If (A_PtrSize=8){ ; use different method to retrieve base address because GetExitCodeThread returns DWORD only
-    hModule:=0,me32 := new _Struct(_MODULEENTRY32)
+    hModule:=0,me32 := Struct(_MODULEENTRY32)
     ;  Take a snapshot of all modules in the specified process.
     hModuleSnap := DllCall("CreateToolhelp32Snapshot","UInt", TH32CS_SNAPMODULE,"UInt", PID, "PTR" )
     if( hModuleSnap != INVALID_HANDLE_VALUE ){
