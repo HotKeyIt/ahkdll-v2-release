@@ -107,18 +107,18 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 						FileList.Push(IncludeFile)
 					PreprocessScript(ScriptText, IncludeFile, ExtraFiles, FileList, FirstScriptDir, Options, IgnoreErrors)
 				}
-			}else if (!contSection && tline ~= "i)^FileInstall[, \t]")
+			}else if (!contSection && tline ~= "i)^\s*FileInstall[, \t\(]")
 			{
 				if tline ~= "^\w+\s+(:=|\+=|-=|\*=|/=|//=|\.=|\|=|&=|\^=|>>=|<<=)"
 					continue ; This is an assignment!
-				if !RegExMatch(tline, "i)^FileInstall[ \t]*[, \t][ \t]*([^,]+?)[ \t]*(,|$)", o) || o.1 ~= "[^``]`%" ; TODO: implement `, detection
+				if !RegExMatch(tline, "i)^\s*FileInstall[ \t]*[, \t\(][ \t]*([^,]+?)[ \t]*(,|$)", o) || o.1 ~= "[^``]`%" ; TODO: implement `, detection
 					Util_Error("Error: Invalid `"FileInstall`" syntax found. Note that the first parameter must not be specified using a continuation section.")
 				_ := Options.esc
 				o1:=o.1
 				StrReplace, o1, %o1%, %_%`%, `%
 				StrReplace, o1, %o1%, %_%`,, `,
 				StrReplace, o1, %o1%, %_%%_%, %_%
-				ExtraFiles.Push(o1)
+				ExtraFiles.Push(Trim(o1,"`""))
 				ScriptText .= tline "`n"
 			}else if !contSection && RegExMatch(tline, "i)^#CommentFlag\s+(.+)$", o)
 				Options.comm := o.1, ScriptText .= tline "`n"
