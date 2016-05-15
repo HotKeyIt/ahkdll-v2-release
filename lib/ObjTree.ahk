@@ -328,9 +328,9 @@ ObjTree(ByRef obj,Title:="ObjTree",Options:="+ReadOnly +Resize,GuiShow=w640 h480
 				for k,v in newObj[G]
 					Objects[G,k]:=v
 			}
-			newObj[G]:="",Objects[G]:="",parents[G]:="",hwnd[G]:="",TREEOBJ[G]:="",Readonly[G]:="",ReadOnlyLevel[G]:=""
 		}
 		Gui,%G%:Destroy
+		newObj[G]:="",Objects[G]:="",parents[G]:="",hwnd[G]:="",TREEOBJ[G]:="",Readonly[G]:="",ReadOnlyLevel[G]:=""
 	Return
 	
 	; Edit control event, update value in ListView and clone of our object
