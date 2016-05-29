@@ -49,8 +49,13 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 	VarSetCapacity(BinScriptBody, BinScriptBody_Len:=StrPut(ScriptBody, "UTF-8"))
 	StrPut(ScriptBody, &BinScriptBody, "UTF-8")
 	If UseCompression {
-		hz:=ZipCreateBuffer(BinScriptBody_Len + 1024,UsePassword)
-		ZipAddbuffer(hz, &BinScriptBody,BinScriptBody_Len, "")
+		CryptBinaryToStringA(&BinScriptBodyData,BinScriptBody_Len,0x1,0,getvar(Len:=0))
+		VarSetCapacity(BinScriptBodyData,dataLength:=Len + 8, 0)
+		NumPut(BinScriptBody_Len,&BinScriptBodyData,"Int64")
+		CryptBinaryToStringA(&BinScriptBodyData,BinScriptBody_Len,0x1,(&BinScriptBodyData) + 8,getvar(Len))
+		hz:=ZipCreateBuffer(dataLength + 1024,UsePassword)
+		ZipAddbuffer(hz, &BinScriptBodyData,dataLength, "")
+		VarsetCapacity(BinScriptBodyData,0)
 		If !BinScriptBody_Len := ZipCloseBuffer(hz, BinScriptBody)
 			Util_Error("Error: Could not compress the source file.")
 	}
