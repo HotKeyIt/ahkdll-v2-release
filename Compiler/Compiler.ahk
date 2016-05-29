@@ -26,12 +26,12 @@ AhkCompile(ByRef AhkFile, ExeFile := "", ByRef CustomIcon := "", BinFile := "", 
 	
 	BundleAhkScript(ExeFile, AhkFile, CustomIcon, UseCompression, UsePassword)
 	
-	if FileExist(A_ScriptDir "\mpress.exe") && UseMPRESS
+	if FileExist(A_ScriptDir "\upx.exe") && UseMPRESS
 	{
 		If !CLIMode,	SB_SetText("Compressing final executable...")
 		if UseCompression ; do not compress resources
-			RunWait, "%A_ScriptDir%\mpress.exe" -q -x -r "%ExeFile%",, Hide
-		else RunWait, "%A_ScriptDir%\mpress.exe" -q -x "%ExeFile%",, Hide
+			RunWait, "%A_ScriptDir%\upx.exe" -q -x -r "%ExeFile%",, Hide
+		else RunWait, "%A_ScriptDir%\upx.exe" -q -x "%ExeFile%",, Hide
 	}
 	
 	SetCursor(LoadCursor(0, 32512)) ; Util_HideHourglass()
@@ -49,7 +49,9 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 	VarSetCapacity(BinScriptBody, BinScriptBody_Len:=StrPut(ScriptBody, "UTF-8"))
 	StrPut(ScriptBody, &BinScriptBody, "UTF-8")
 	If UseCompression {
-		If !BinScriptBody_Len := ZipRawMemory(&BinScriptBody,BinScriptBody_Len, BinScriptBody, UsePassword)
+		hz:=ZipCreateBuffer(BinScriptBody_Len + 1024,UsePassword)
+		ZipAddbuffer(hz, &BinScriptBody,BinScriptBody_Len, "")
+		If !BinScriptBody_Len := ZipCloseBuffer(hz, BinScriptBody)
 			Util_Error("Error: Could not compress the source file.")
 	}
 	

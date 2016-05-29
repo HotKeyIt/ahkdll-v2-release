@@ -93,8 +93,8 @@ Gui, Add, CheckBox, x138 y282 w230 h20 vUseEncrypt gCheckCompression Checked%Las
 ToolTip.Add("Button8","Use AES encryption for resources (requires a Password)")
 Gui, Add, Edit,x370 y282 w100 h20 Password vUsePassword,AutoHotkey
 ToolTip.Add("Edit4","Enter password for encryption (default = AutoHotkey).`nAutoHotkey binary must be using this password internally")
-Gui, Add, CheckBox, x138 y304 w315 h20 gCheckCompression vUseMpress Checked%LastUseMPRESS%, Use MPRESS (if present) to compress resulting exe
-ToolTip.Add("Button9","MPRESS makes executables smaller and decreases start time when loaded from slow media")
+Gui, Add, CheckBox, x138 y304 w315 h20 gCheckCompression vUseMpress Checked%LastUseMPRESS%, Use UPX (if present) to compress resulting exe
+ToolTip.Add("Button9","UPX makes executables smaller and decreases start time when loaded from slow media")
 Gui, Add, Button, x235 y338 w125 h28 +Default gConvert, > &Compile Executable <
 ToolTip.Add("Button10","Convert script to executable file")
 Gui, Add, StatusBar,, Ready
@@ -150,10 +150,10 @@ ExitApp
 GuiDropFiles:
 if A_EventInfo > 2
 	Util_Error("You cannot drop more than one file into this window!")
-SplitPath, A_GuiEvent,,, dropExt
+SplitPath, %A_GuiEvent%,,, dropExt
 if (dropExt = "ahk")
 	GuiControl,, AhkFile, %A_GuiEvent%
-else if dropExt = ico
+else if (dropExt = "ico")
 	GuiControl,, IcoFile, %A_GuiEvent%
 else if InStr(".exe.dll.","." dropExt ".")
 	GuiControl,, ExeFile, %A_GuiEvent%
@@ -171,7 +171,7 @@ sData := SizeofResource(0, hRSrc)
 hRes  := LoadResource(0, hRSrc)
 pData := LockResource(hRes)
 If NumGet(pData,0,"UInt")=0x04034b50
-	sData:=UnZipRawMemory(pData,resLogo),pData:=&resLogo
+	sData:=UnZipRawMemory(pData,sData,resLogo),pData:=&resLogo
 hGlob := GlobalAlloc(2, sData) ; 2=GMEM_MOVEABLE
 pGlob := GlobalLock(hGlob)
 #DllImport,memcpy,msvcrt\memcpy,ptr,,ptr,,ptr,,CDecl
@@ -383,19 +383,15 @@ else
 return
 
 LoadSettings:
-RegRead, LastScriptDir, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastScriptDir
-RegRead, LastExeDir, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastExeDir
-RegRead, LastIconDir, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastIconDir
-RegRead, LastIcon, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastIcon
-RegRead, LastBinFile, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastBinFile
-RegRead, LastUseCompression, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseCompression
-RegRead, LastUseMPRESS, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseMPRESS
-RegRead, LastUseEncrypt, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseEncrypt
-RegRead, LastUseInclude, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseInclude
-RegRead, LastUseIncludeResource, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseIncludeResource
-RegRead, LastUseIncludeLib, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseIncludeLib
-RegRead, LastUseIncludeAutoHotkeyDll, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseIncludeAutoHotkeyDll
-RegRead, LastUseIncludeAutoHotkeyMini, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseIncludeAutoHotkeyMini
+RegRead, LastScriptDir, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastScriptDir
+RegRead, LastExeDir, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastExeDir
+RegRead, LastIconDir, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastIconDir
+RegRead, LastIcon, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastIcon
+RegRead, LastBinFile, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastBinFile
+RegRead, LastUseCompression, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastUseCompression
+RegRead, LastUseMPRESS, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastUseMPRESS
+RegRead, LastUseEncrypt, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastUseEncrypt
+
 if !FileExist(LastIcon)
 	LastIcon := ""
 if (LastBinFile = "") || !FileExist(LastBinFile)
@@ -415,20 +411,15 @@ if IcoFile
 	SplitPath,% IcoFile,, IcoFileDir
 else
 	IcoFileDir := ""
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastScriptDir, %AhkFileDir%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastExeDir, %ExeFileDir%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastIconDir, %IcoFileDir%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastIcon, %IcoFile%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseCompression, %UseCompression%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseMPRESS, %UseMPRESS%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseEncrypt, %UseEncrypt%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseInclude, %UseInclude%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseIncludeResource, %UseIncludeResource%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseIncludeLib, %UseIncludeLib%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseIncludeAutoHotkeyDll, %UseIncludeAutoHotkeyDll%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseIncludeAutoHotkeyMini, %UseIncludeAutoHotkeyMini%
+RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastScriptDir, %AhkFileDir%
+RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastExeDir, %ExeFileDir%
+RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastIconDir, %IcoFileDir%
+RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastIcon, %IcoFile%
+RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastUseCompression, %UseCompression%
+RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastUseMPRESS, %UseMPRESS%
+RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastUseEncrypt, %UseEncrypt%
 if !CustomBinFile
-	RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastBinFile,% BinFiles[BinFileId]
+	RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastBinFile,% BinFiles[BinFileId]
 return
 
 Help:

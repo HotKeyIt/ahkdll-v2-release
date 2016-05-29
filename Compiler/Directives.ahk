@@ -114,7 +114,7 @@ Directive_UseResourceLang(state, resLang)
 Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 {
 	resType := "" ; auto-detect
-	if RegExMatch(rsrc, "^\*(\w+)\s+(.+)$", o)
+	if RegExMatch(rsrc, "^\s*(\w+|\d+)\s+(.+)$", o)
 		resType := o.1, rsrc := o.2
 	if !resFile := Util_GetFullPath(rsrc)
 		Util_Error("Error: specified resource does not exist: " rsrc)
@@ -122,7 +122,7 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 	if !resName
 		resName := resFileName, defResName := true
 	StrUpper, resName, %resName%
-	if resType = ""
+	if (resType = "")
 	{
 		; Auto-detect resource type
 		if InStr(".bmp.dib.","." resExt ".")
@@ -131,9 +131,9 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 			Util_Error("Error: Icon resource adding is not supported yet!")
 		else if resExt = "cur"
 			Util_Error("Error: Cursor resource adding is not supported yet!")
-		else if InStr(".htm.html.mht.","." resExt ".")
+		else if InStr(".htm.html.mht.css.js.","." resExt ".")
 			resType := 23 ; RT_HTML
-		else if resExt = manifest
+		else if (resExt = "manifest")
 		{
 			resType := 24 ; RT_MANIFEST
 			if defResName
@@ -149,7 +149,7 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 	if Type(resName+0) = "Integer"
 		if between(resName,0,0xFFFF)
 			nameType := "uint"
-	If UseCompression{
+	If UseCompression && resType=10{
 		FileRead, tempdata, *c %resFile%
 		FileGetSize, tempsize, %resFile%
 		If !fSize := ZipRawMemory(&tempdata, tempsize, fData)
@@ -166,7 +166,7 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 			Util_Error("Error: Impossible BMP file!")
 		pData += 14, fSize -= 14
 	}
-	if !UpdateResource(state.module, resType, resName, state.resLang, pData, fSize)
+	if !UpdateResource(state.module, resType+0?resType+0:resType, resName, state.resLang, pData, fSize)
 		Util_Error("Error adding resource:`n`n" rsrc)
 	VarSetCapacity(fData, 0)
 }
