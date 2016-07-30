@@ -51,19 +51,24 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 		VarSetCapacity(buf,bufsz:=65536,00),totalsz:=0,VarSetCapacity(buf1,65536)
 		Loop, Parse,%ScriptBody%,`n,`r
 		{
+			If (A_LoopField=""){
+				NumPut(10,(&buf) + totalsz, "Char")
+				,totalsz+=1
+				continue
+			}
 			len:=StrPutVar(A_LoopField,data,"UTF-8")
 			,sz:=ZipRawMemory(&data, len, zip, UsePassword)
- 			,CryptBinaryToStringA(&zip, sz, 0x1|0x40000000, 0, getvar(cryptedsz:=0))
+			,CryptBinaryToStringA(&zip, sz, 0x1|0x40000000, 0, getvar(cryptedsz:=0))
 			,tosavesz:=cryptedsz
 			,CryptBinaryToStringA(&zip, sz, 0x1|0x40000000, &buf1, getvar(cryptedsz))
-			,NumPut(10,&buf1,cryptedsz)
+			,NumPut(10,&buf1,cryptedsz,"Char")
 			if (totalsz+tosavesz>bufsz)
 				VarSetCapacity(buf,bufsz*=2)
 			RtlMoveMemory((&buf) + totalsz,&buf1,tosavesz)
 			,totalsz+=tosavesz
 		}
 		NumPut(0,&buf,totalsz-1,"UShort")
-		If !BinScriptBody_Len := ZipRawMemory(&buf,totalsz,BinScriptBody,"AutoHotkey")
+		If !BinScriptBody_Len := ZipRawMemory(&buf,totalsz,BinScriptBody,UsePassword)
 			Util_Error("Error: Could not compress the source file.")
 	}
 	
