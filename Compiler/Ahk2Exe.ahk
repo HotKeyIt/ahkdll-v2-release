@@ -313,11 +313,11 @@ CustomBinFile := true,BinFile := p2
 return
 
 _ProcessPass:
-UseEncrypt := true,UseCompress := true,UsePassword := p2
+UseEncrypt := true,UseCompression := true,UsePassword := p2
 return
 
 _ProcessNoDecompile:
-UseEncrypt := true,UseCompress := true
+UseEncrypt := true,UseCompression := true
 return
 
 _ProcessMPRESS:
