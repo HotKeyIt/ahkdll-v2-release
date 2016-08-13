@@ -32,7 +32,7 @@ AHKType(exeName)
 		return "FAIL"
 	
 	; Check it is actually an AutoHotkey executable
-	if !InStr(StrGet(pField, cbField), "AutoHotkey")
+	if !InStr(name:=StrGet(pField, cbField), "AutoHotkey") && !InStr(name,"Ahk2Exe")
 		return "FAIL"
 	
 	; We're dealing with a legacy version if it's prior to v1.1

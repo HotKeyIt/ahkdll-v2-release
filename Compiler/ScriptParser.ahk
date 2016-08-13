@@ -141,7 +141,7 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 		FileDelete, %ilibfile%
 		FileDelete, %ilibfile%.script
 		FileDelete, %ilibfile%.error
-		static AhkPath := A_IsCompiled ? A_ScriptDir "\..\AutoHotkey.exe" : A_AhkPath
+		static AhkPath := A_AhkPath ;A_IsCompiled ? A_ScriptDir "\..\AutoHotkey.exe" : A_AhkPath
 		AhkType := AHKType(AhkPath)
 		if AhkType = "FAIL"
 			Util_Error("Error: The AutoHotkey build used for auto-inclusion of library functions is not recognized.", 1, AhkPath)
