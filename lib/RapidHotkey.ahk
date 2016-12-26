@@ -42,7 +42,7 @@ RapidHotkey(keystroke, times:="2", delay:=0.2, IsLabel:=0)
 	LoopParse, Ctrl|Alt|Shift|LWin|RWin, |
 		KeyWait, %A_LoopField%
   KeyWait % hotkey
-  If thishotkey!=A_ThisHotkey
+  If thishotkey!=%A_ThisHotkey%
 		Return
 	If ((!IsLabel or (IsLabel && IsLabel(keystr))) && InStr(A_ThisHotkey, "~") && !RegExMatch(A_ThisHotkey
 	, "i)\^[^\!\d]|![^\d]|#|Control|Ctrl|LCtrl|RCtrl|Shift|RShift|LShift|RWin|LWin|Alt|LAlt|RAlt|Escape|BackSpace|F\d\d?|"
