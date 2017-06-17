@@ -6,9 +6,10 @@ CryptAES(ByRef lp,sz,pw,e:=1,SID:=256){
 	|| !CryptDeriveKey(hP,AES_%SID%,H,SID<<16,getvar(hK:=0))
 	|| !CryptDestroyHash(H)
 		return 0
-	if e,	CryptEncrypt(hK,0,1,0,&lp,getvar(sz),sz+16)
+	if e
+		CryptEncrypt(hK,0,1,0,&lp,getvar(sz),sz+16)
 	else	CryptDecrypt(hK,0,1,0,&lp,sz)
-	return CryptDestroyKey(hK),CryptReleaseContext(hP,0),sz
+	return (CryptDestroyKey(hK),CryptReleaseContext(hP,0),sz)
 }
 ;~ CryptAES(ByRef lp,sz,pw,e:=1,SID:=256){
 	;~ static f:="advapi32\Crypt",t:="UPtr",t_:="UPtr*",AES_128:=0x660E,AES_192:=1+AES_128,AES_256:=1+AES_192,SHA1:=1+0x8003 ; MD5

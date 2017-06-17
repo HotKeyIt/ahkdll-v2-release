@@ -96,7 +96,7 @@ Class _Input {
       If RegExMatch(" Max TimeOut Match ","i)\s(" EndKey ")\s") ; ErrorLevel is not an EndKey: , go different route
       {
         idx:=1                      ; init function parameter index to 0
-        LoopParse,%EndKey%,|         ; in case we have several Errorlevel entries, e.g. Max|Timeout|Match (will launch same function)
+        Loop Parse, EndKey, "|"         ; in case we have several Errorlevel entries, e.g. Max|Timeout|Match (will launch same function)
         {
           this.Parameters[A_LoopField]:=[]   ; create an array object for parameters
           idx++                     ; increase index by one, will be set to 1 on first run
@@ -109,7 +109,7 @@ Class _Input {
         ; Replace Ctrl to Control and Control+Alt+Shift+Win to LAlt|RAlt....
         EndKey:=RegExReplace(RegExReplace(EndKey,"i)([LR])?Ctrl","$1Control"),"i)(Alt|Control|Shift|Win)","L$1$2|R$1$2")
         idx:=1                      ; init function parameter index to 0
-        LoopParse,%_EndKeys%,%A_Space% ; check all available Keys for match in our pattern
+        Loop Parse, _EndKeys, A_Space ; check all available Keys for match in our pattern
         {
           If (RegExMatch(A_LoopField,"i)^(" EndKey ")$")){
             this.EndKeys .= "{" A_LoopField "}" ; add EndKey to list of EndKeys
@@ -138,18 +138,18 @@ Class _Input {
   */
   Input(ByRef Input:="",Timer:=25,Options:="",MatchList:="",AlwaysNotify:=0){
 		If IsFunc(Function:=this.WatchInput) ; check if we have a valid function for watching input
-      SetTimer,_Input,% Timer       ; set timer to run watching function
+      SetTimer "_Input", Timer       ; set timer to run watching function
 		else Function:=""
     FuncObj:=this.Function
     Loop {                          ; repeat command until ErrorLevel=NewInput or a function returns true (1)
-      Input,Input,% Options!=""?Options:this.Options,% this.EndKeys,% MatchList!=""?MatchList:this.MatchList ; pass parameters created previously
+      Input:=Input(Options!=""?Options:this.Options, this.EndKeys, MatchList!=""?MatchList:this.MatchList) ; pass parameters created previously
 			If Function
-				SetTimer,_Input,Off         ; disable watching function while processing input and in case we break
+				SetTimer "_Input", "Off"         ; disable watching function while processing input and in case we break
 			If (ErrorLevel="NewInput"       ; NewInput or a function that returns true will break the Loop
 				|| (FuncObj[ErrorLevel](Input,GetKeyState("Ctrl","P"),GetKeyState("Alt","P"),GetKeyState("Shift","P"),this.Parameters[ErrorLevel]*)) )
         break
 			If Function
-				SetTimer,_Input,% Timer     ; enable watching function again
+				SetTimer "_Input", Timer     ; enable watching function again
     }
     Return Input                    ; return entered input
     

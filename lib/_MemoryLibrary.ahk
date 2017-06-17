@@ -1,12 +1,12 @@
 /*
 If (!FileExist("X:\AutoHotkey.dll")){
-  MsgBox AutoHotkey.dll was not found
+  MsgBox "AutoHotkey.dll was not found"
   ExitApp
 }
 IF !(MemLib:=new _MemoryLibrary("X:\AutoHotkey.dll"))
   MsgBox, AutoHotkey.dll could not be loaded
 ;Second method by passing the data pointer
-FileRead,data,*c X:\AutoHotkey.dll
+data:=FileRead("X:\AutoHotkey.dll","RAW")
 NewMemLib:=new _MemoryLibrary(&data)
 
 DllCall(MemLib.GetProcAddress("ahktextdll"),"Str","MsgBox Hello from Thread `%A_ScriptFullPath`%","Str","","Str","") ; start first AutoHotkey.dll thread
@@ -263,17 +263,17 @@ Class _MemoryLibrary {
     static Is64:=A_PtrSize=8?"64":"32",MEM_RESERVE:=0x2000,PAGE_EXECUTE_READWRITE:=0x40,MEM_COMMIT:=4096
     If (Type(DataPTR)!="Integer")
     {	
-      FileRead,Data,*c %DataPTR%
+      Data:=FileRead(DataPTR, "RAW")
       DataPTR:=&Data
     }
     dh:=new _Struct(this.IMAGE_DOS_HEADER,DataPTR)
     if (dh.e_magic != IMAGE_DOS_SIGNATURE:=23117){
-      MsgBox ERROR: e_magic not found
+      MsgBox("ERROR: e_magic not found")
       return
     }
     oh := new _Struct(this["IMAGE_NT_HEADERS" Is64],DataPTR + dh.e_lfanew)
     if (oh.Signature != IMAGE_NT_SIGNATURE:=17744){
-      MsgBox ERROR: Signature not found
+      MsgBox("ERROR: Signature not found")
       return
     }
     ; reserve memory for image of library
@@ -284,7 +284,7 @@ Class _MemoryLibrary {
       code := DllCall("VirtualAlloc","PTR",0,"PTR",oh.OptionalHeader.SizeOfImage
         ,"UINT",MEM_RESERVE,"UINT",PAGE_EXECUTE_READWRITE,"PTR")
       if (code = 0){
-        MsgBox ERROR: loading Library
+        MsgBox("ERROR: loading Library")
         return
       }
     }
@@ -306,7 +306,7 @@ Class _MemoryLibrary {
       this.PerformBaseRelocation(locationDelta)
     ; load required dlls and adjust function table of imports
     if (!this.BuildImportTable()) {
-        MsgBox ERROR: BuildImportTable failed
+        MsgBox("ERROR: BuildImportTable failed")
         Return
     }
     ; mark memory pages depending on section headers and release
@@ -316,13 +316,13 @@ Class _MemoryLibrary {
     if (this.MM.hdrs.OptionalHeader.AddressOfEntryPoint != 0){
       DllEntry := code + this.MM.hdrs.OptionalHeader.AddressOfEntryPoint
       if (DllEntry = 0) {
-        MsgBox ERROR: DllEntry not found
+        MsgBox("ERROR: DllEntry not found")
         Return
       }
       ; notify library about attaching to process
       successfull := DllCall(DllEntry,"PTR",code, "UInt",DLL_PROCESS_ATTACH:=1,"UInt", 0,"CHAR")
       if (!successfull){
-        MsgBox ERROR attaching process
+        MsgBox("ERROR attaching process")
         Return
       }
       this.MM.init := 1

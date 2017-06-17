@@ -118,7 +118,7 @@ WatchDirectory(p*){
       ; If !IsFunc(ReportToFunction)
         ; Return -1 ;DllCall("MessageBox","Uint",0,"Str","Function " ReportToFunction " does not exist","Str","Error Missing Function","UInt",0)
       RegExMatch(p.1,"^([^/\*\?<>\|`"]+)(\*)?(\|.+)?$",dir)
-      loop % dir.count()
+      loop dir.count()
         dir%A_Index%:=dir[A_Index]
       if (SubStr(dir1,-1)="\")
         dir1:=SubStr(dir1,1,-1)
@@ -126,8 +126,8 @@ WatchDirectory(p*){
       If (max=2 && ReportToFunction=""){
         for i,folder in _
           If (dir1=SubStr(folder,1,-1))
-            Return 0 ,DirEvents[i]:=DirEvents[_.Length()],DirEvents[_.Length()]:=0
-                   __.Delete(folder),_[i]:=_[_.Length()],_.Delete(i)
+            Return (DirEvents[i]:=DirEvents[_.Length()],DirEvents[_.Length()]:=0
+                   ,__.Delete(folder),_[i]:=_[_.Length()],_.Delete(i))
         Return 0
       }
     }
@@ -149,10 +149,10 @@ WatchDirectory(p*){
               ,"PTR",0,"UInt",0x3,"UInt",0x2000000|0x40000000,"PTR",0)
     __[LP].sD:=(dir2=""?0:1)
 
-    LoopParse,%StringToRegEx%,|
-      StrReplace,dir3,%dir3%,% SubStr(A_LoopField,1,1),% SubStr(A_LoopField,2)
-    StrReplace,dir3,%dir3%,%A_Space%,\s
-    LoopParse,%dir3%,|
+    Loop Parse, StringToRegEx,"|"
+      dir3:=StrReplace(dir3,SubStr(A_LoopField,1,1),SubStr(A_LoopField,2))
+    dir3:=StrReplace(dir3,A_Space,"\s")
+    Loop Parse, dir3,"|"
     {
       If A_Index=1
         dir3:=""
@@ -178,7 +178,7 @@ WatchDirectory(p*){
            ,"Int",__[LP].sD,"UInt",__[LP].CNG,"UInt",0,"UInt",__[LP].O[""],"UInt",0)
     Return timer:=DllCall("SetTimer","Uint",0,"UInt",timer,"Uint",50,"UInt",WatchDirectory)
   } else {
-    Sleep, 0
+    Sleep 0
 	If !DirEvents
 		return
     for LP in reconnect

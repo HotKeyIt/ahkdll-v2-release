@@ -1,5 +1,5 @@
-﻿MsgBox % ObjTree([["a","b"],[1,2]])
-ExitApp
+﻿;~ MsgBox ObjTree([["a","b"],[1,2]])
+;~ ExitApp
 #include *i <LV>
 ;~ #include <_Struct>
 

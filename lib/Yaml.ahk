@@ -4,8 +4,8 @@
   local maxLVL:=0,LastContObj:=0,LastContKEY:=0,LinesAdded:=0,_LVLChanged:=0
   LVL0:=pYaml:=YamlObj?YamlObj:Object("base",base),__LVL:=0,__LVL0:=0
   If IsFile
-    FileRead,YamlText,%YamlText%
-  LoopParse,%YamlText%,`n,`r
+    YamlText:=FileRead(YamlText)
+  Loop Parse, YamlText, "`n", "`r"
   {
     If !_CNT&&(A_LoopField=""||RegExMatch(A_LoopField,"^\s+$")){ ;&&__KEY=""&&__SEQ="")){
 			If ((OBJ:=LVL%__LVL%[""])&&ObjLength(obj))&&IsObject(LVL%__LVL%["",OBJ])&&__SEQ{
@@ -46,12 +46,12 @@
 			}
     }
     If LoopField="---"{
-      Loop % (maxLVL)
+      Loop (maxLVL)
         LVL%A_Index%:=""
-      LoopParse,%BackupVars%,`,
+      Loop Parse, BackupVars, "`,"
         __%A_LoopField%:="",__%A_LoopField%0:=""
-      LoopParse,%BackupVars%,`,
-        Loop % maxLVL
+      Loop Parse, BackupVars, "`,"
+        Loop maxLVL
         __%A_LoopField%%A_Index%:=""
       maxLVL:=0
       __LVL:=0,__LVL0:=0
@@ -61,12 +61,12 @@
       Continue
     } else if LoopField="..."{
       LVL0:=pYaml
-      Loop % maxLVL
+      Loop maxLVL
         LVL%A_Index%:=""
-      LoopParse,%BackupVars%,`,
+      Loop Parse, BackupVars,"`,"
         __%A_LoopField%:="",__%A_LoopField%0:=""
-      LoopParse,%BackupVars%,`,
-        Loop % maxLVL
+      Loop Parse, BackupVars,"`,"
+        Loop maxLVL
         __%A_LoopField%%A_Index%:=""
       maxLVL:=0
       __LVL:=0,__LVL0:=0
@@ -87,7 +87,7 @@
     _LVL:=Yaml_S2I(_LVL)
     If _LVL-__LVL>1||(_LVL>__LVL&&_LVLChanged) ;&&!(__SEQ&&__KEY!=""&&_KEY!="")) ; (__SEQ?2:1)
     {
-      Loop % (_LVLChanged?_LVL-_LVLChanged:_LVL-__LVL-1)
+      Loop (_LVLChanged?_LVL-_LVLChanged:_LVL-__LVL-1)
         LoopField:=SubStr(LoopField,SubStr(LoopField,1,1)=A_Tab?1:2)
       _LVL:=_LVLChanged?_LVLChanged:__LVL+1,_LVLChanged:=_LVLChanged?_LVLChanged:_LVL ;__LVL%_LVL%:=__LVL%_NXT% ; (__SEQ?2:1)
     } else if _LVLChanged
@@ -97,7 +97,7 @@
       maxLVL:=_LVL+(_SEQ?1:0)
     ; Cut off the leading tabs/spaces conform _LVL
     SubStr:=0,Tabs:=0
-    LoopParse,%LoopField%
+    Loop Parse, LoopField
     {
       If _LVL*2=SubStr||!SubStr:=SubStr+(A_LoopField=A_Tab?2:1)
         break
@@ -108,7 +108,7 @@
     _NXT:=_LVL+1 ;next indentation level
     __NXT:=_NXT+1
     _PRV:=_LVL=0?0:_LVL-1
-    LoopParse,%BackupVars%,`,
+    Loop Parse, BackupVars, "`,"
       __%A_LoopField%:=__%A_LoopField%%_PRV%
     If RegExMatch(_LFL,"^-\s*$"){
       _SEQ:="-",_KEY:="",_VAL:=""
@@ -118,14 +118,14 @@
       continue
     }
     If _LVL<__LVL{ ;Reset Objects and Backup vars
-      Loop % (maxLVL)
+      Loop (maxLVL)
         If A_Index>_LVL{
-          LoopParse,%BackupVars%,`,
+          Loop Parse, BackupVars,"`,"
             __%A_LoopField%%maxLVL%:=""
           LVL%A_Index%:="",maxLVL:=maxLVL-1
         }
       If _LVL=0&&!__LVL:=__LVL0:=0
-        LoopParse,%BackupVars%,`,
+        Loop Parse, BackupVars, "`,"
           __%A_LoopField%:="",__%A_LoopField%0:=""
     }
     If _SEQ&&_LVL>__LVL&&(__VAL!=""||__SCA)
@@ -167,7 +167,7 @@
         LVL%_LVL%[""]:=Object("base",base)
       While (SubStr(_LFL,1,2)="- "){
         _LFL:=SubStr(_LFL,3),_KEY:=(_KEY!="")?_LFL:=SubStr(_KEY,3):_KEY,ObjPush(LVL%_LVL%[""],LVL%_NXT%:=Object("",Object("base",base),"base",base)),_LVL:=_LVL+1,_NXT:=_NXT+1,__NXT:=_NXT+1,_PRV:=_LVL-1,maxLVL:=(maxLVL<_LVL)?_LVL:maxLVL
-        LoopParse,%BackupVars%,`,
+        Loop Parse, BackupVars, "`,"
           __%A_LoopField%:=_%A_LoopField%
           ,__%A_LoopField%%_PRV%:=_%A_LoopField%
       }
@@ -224,27 +224,27 @@
       }
       Continue
     }
-    LoopParse,%BackupVars%,`,
+    Loop Parse, BackupVars,"`,"
       __%A_LoopField%:=_%A_LoopField%
       ,__%A_LoopField%%_LVL%:=_%A_LoopField%
   }
   If LastContObj&&!__SCA
       LastContObj[LastContKEY]:=SubStr(LastContObj[LastContKEY],1,-1*LinesAdded)
   pYaml.base:=base
-  LoopParse,%BackupVars%,`,
+  Loop Parse, BackupVars, "`,"
       If !(__%A_LoopField%:="")
-        Loop % maxLVL
+        Loop maxLVL
           __%A_LoopField%%A_Index%:=""
   Return pYaml
 }
 Yaml_Save(obj,file,level:=""){
-  FileMove,% file,% file ".bakupyml",1
-  FileAppend,% Yaml_Dump(obj),% file
+  FileMove file,file ".bakupyml",1
+  FileAppend Yaml_Dump(obj), file
   If !ErrorLevel
-    FileDelete,% file ".bakupyml"
+    FileDelete file ".bakupyml"
   else {
-    FileMove,% file ".bakupyml",% file
-    MsgBox,0, Error creating file, old file was restored.
+    FileMove file ".bakupyml", file
+    MsgBox("Error creating file, old file was restored.")
   }
 }
 Yaml_Merge(obj,merge){
@@ -346,7 +346,7 @@ Yaml_Dump(O,J:="",R:=0,Q:=0){
 }
 Yaml_UniChar(string){
   static a:="`a",b:="`b",t:="`t",n:="`n",v:="`v",f:="`f",r:="`r",e:=Chr(0x1B)
-  LoopParse,%string%,\
+  Loop Parse, string, "\"
   {
     If A_Index=1{
       var.=A_LoopField
@@ -387,7 +387,7 @@ Yaml_UniChar(string){
 Yaml_CharUni(string){
   static ascii:={"\":"\","`a": "a","`b": "b","`t": "t","`n": "n","`v": "v","`f": "f","`r": "r",Chr(0x1B): "e","`"": "`"",Chr(0x85): "N",Chr(0x2029): "P",Chr(0x2028): "L","": "0",Chr(0xA0): "_"}
   If !RegexMatch(string,"[\x{007F}-\x{FFFF}]"){
-    LoopParse,%string%
+    Loop Parse, string
     {
       If ascii[A_LoopField]
         var.="\" ascii[A_LoopField]
@@ -396,7 +396,7 @@ Yaml_CharUni(string){
     }
     return var
   }
-  LoopParse,%string%
+  Loop Parse, string
   {
     If ascii[A_LoopField]
         var.="\" ascii[A_LoopField]
@@ -425,7 +425,7 @@ Yaml_UnQuoteIfNeed(s){
 }
 Yaml_S2I(str){
   local idx:=0
-  LoopParse,%str%
+  Loop Parse, str
     If A_LoopField=A_Tab
       idx++
     else if !Mod(A_index,2)
@@ -433,7 +433,7 @@ Yaml_S2I(str){
   Return idx
 }
 Yaml_I2S(idx){
-  Loop % idx
+  Loop idx
     str .= "  "
   Return str
 }
@@ -470,7 +470,7 @@ Yaml_Seq(obj,key,value,isVal:=0){
     else obj[key]:=Object("",cObj:=Object("base",base),"base",base)
   }
   Count:=StrLen(value)
-  LoopParse,%value%
+  Loop Parse, value
   {
     If (Quote="`""&&Yaml_Quote(LF,A_LoopField,Quote,Bracket,Escape))||(ContinueNext&&!ContinueNext:=0)
       Continue
@@ -548,7 +548,7 @@ Yaml_Map(obj,key,value,isVal:=0){
     else obj[key]:=(cObj:=Object("base",base))
   }
   Count:=StrLen(value)
-  LoopParse,%value%
+  Loop Parse, value
   {
 
     If ((Quote="`""&&Yaml_Quote(LF,A_LoopField,Quote,Bracket,Escape))||(ContinueNext&&!ContinueNext:=0))

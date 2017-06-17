@@ -170,7 +170,7 @@ DBGp_Receive(session, ByRef packet)
     Critical Off ; Must be Off to allow data to be received.
 	while !session.responseQueue.Length()
         Sleep 10
-    Critical % WasCritical
+    Critical WasCritical
     packet := session.responseQueue.Delete(1)
 	if RegExMatch(packet, "<error\s+code=`"\K.*?(?=`")", DBGp_error_code)
 		return DBGp_E(DBGp_error_code.Value)
@@ -246,10 +246,10 @@ DBGp_StringToBinary(ByRef bin, hex, fmt:=12) {    ; return length, result in bin
 ; Rewritten by fincs to support Unicode paths
 DBGp_EncodeFileURI(s)
 {
-	LoopFiles, %s%, F
+	Loop Files, s, "F"
 		s := A_LoopFileFullPath
-	StrReplace, s, %s%, \, /
-	StrReplace, s, %s%, `%, `%25
+	s:=StrReplace(s, "\", "/")
+	s:=StrReplace(s, "`%", "`%25")
 	VarSetCapacity(h, 4)
 	while RegExMatch(s, "[^\w\-.!~*'()/`%]", c)
 	{
@@ -257,7 +257,7 @@ DBGp_EncodeFileURI(s)
 		r := ""
 		while n := format("0x{1:X}",NumGet(h, A_Index-1, "UChar"))
 			r .= "`%" DBGp_StrUpper(SubStr("0" SubStr(n, 3), -2))
-		StrReplace, s, %s%, % c.Value, % r
+		s:=StrReplace(s, c.Value, r)
 	}
 	return s
 }
@@ -268,7 +268,7 @@ DBGp_DecodeFileURI(s)
 {
 	if SubStr(s, 1, 8) = "file:///"
 		s := SubStr(s, 9)
-	StrReplace, s, %s%, /, \
+	s:=StrReplace(s, "/", "\")
 	
 	VarSetCapacity(buf, StrLen(s)+1)
 	i := 0, o := 0
@@ -288,11 +288,11 @@ DBGp_DecodeFileURI(s)
 DBGp_DecodeXmlEntities(s)
 {
 	; Replace XML entities which may be returned by AutoHotkey_L (e.g. in ide_key attribute of init packet if DBGp_IDEKEY env var contains one of "&'<>).
-	StrReplace, s, %s%, &quot;, `"
-	StrReplace, s, %s%, &amp;, &
-	StrReplace, s, %s%, &apos;, '
-	StrReplace, s, %s%, &lt;, <
-	StrReplace, s, %s%, &gt;, >
+	s:=StrReplace(s, "&quot;", "`"")
+	s:=StrReplace(s, "&amp;", "&")
+	s:=StrReplace(s, "&apos;", "'")
+	s:=StrReplace(s, "&lt;", "<")
+	s:=StrReplace(s, "&gt;", ">")
 	return s
 }
 
@@ -322,7 +322,7 @@ DBGp_HandleWindowMessage(hwnd, uMsg, wParam, lParam)
 		; Accept incoming connection.
 		s := DllCall("ws2_32\accept", "ptr", wParam, "uint", 0, "uint", 0, "ptr")
 		if s = -1
-			return DBGp_WSAE(),0
+			return (DBGp_WSAE(),0)
         
         ; D("# accept " s " from " wParam)
 		
@@ -559,8 +559,7 @@ DBGp_hwnd()
 
 DBGp_StrUpper(q)
 {
-	StrUpper, q, %q%
-	return q
+	return StrUpper(q)
 }
 
 ; Internal: Sets ErrorLevel to WSAE:<Winsock error code> then returns an empty string.

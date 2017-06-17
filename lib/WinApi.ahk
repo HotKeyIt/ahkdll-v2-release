@@ -50,18 +50,18 @@ functions.="opengl32\glAccum:if|glActiveTexture:i|glAlphaFunc:if|glAreTexturesRe
     object:=obj
   else if (mapping=1)
     mapping:=object,object:=1
-  LoopParse,%functions%,|
+  Loop Parse, functions,"|"
   {
     If InStr(A_LoopField,"\")
       dll := SubStr(A_LoopField,1,InStr(A_LoopField,"\")-1)
     else if (dll="")
       Continue
-    StrSplit,args,%A_LoopField%,:
+    args:=StrSplit(A_LoopField,":")
     If InStr(args.1,"\")
       args.1:=SubStr(args.1,InStr(args.1,"\")+1)
     v:=""
     if (mapping){
-      loopParse,%Mapping%,%A_Space%
+      loop Parse, Mapping, A_Space
       {
       ; MsgBox % SubStr(A_LoopField,1,InStr(A_LoopField,"=")-1) "-" args.1 "-" A_LoopField
         If (SubStr(A_LoopField,1,InStr(A_LoopField,"=")-1)=args.1 && v:=SubStr(A_LoopField,InStr(A_LoopField,"=")+1))

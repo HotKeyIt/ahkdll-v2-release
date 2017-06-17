@@ -4,7 +4,7 @@
 ; MsgBox % GetProcessWorkingDir(PID)
 GetProcessWorkingDir(PID){
   static PROCESS_ALL_ACCESS:=0x1F0FFF,MEM_COMMIT := 0x1000,MEM_RELEASE:=0x8000,PAGE_EXECUTE_READWRITE:=64
-        ,len:=VarSetCapacity(GetCurrentDirectoryW,1024),l:=DllCall("LoadLibrary","Str","kernel32.dll"),u
+        ,GetCurrentDirectoryW,len:=VarSetCapacity(GetCurrentDirectoryW,1024,00),l:=DllCall("LoadLibrary","Str","kernel32.dll"),u
         ,init:=DllCall("RtlMoveMemory","PTR",&GetCurrentDirectoryW,"PTR",u:=DllCall("GetProcAddress","PTR",l,"AStr","GetCurrentDirectoryW","PTR"),"PTR",len)
               NumPut(NumGet(&GetCurrentDirectoryW,7,"UCHAR")-A_PtrSize,&GetCurrentDirectoryW,7,"UCHAR")
   ;~ GetCurrentDirectoryW,init:=MCode(GetCurrentDirectoryW,"8BFF558BECFF75088B450803C050FF15A810807CD1E85DC20800")

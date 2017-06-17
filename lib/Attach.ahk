@@ -111,14 +111,14 @@ Attach_(hCtrl, aDef, Msg, hParent){
     If adrWindowInfo=""
       return			;Resetting prior to adding any control just returns.
     hParent := hCtrl != "" ? hCtrl+0 : hGui
-    loopparse,% _%hParent%a, %A_Space%
+    loop parse, _%hParent%a, A_Space
     {
       hCtrl := A_LoopField, SubStr(_%hCtrl%,1,1), aDef := SubStr(_%hCtrl%,1,1)="-" ? SubStr(_%hCtrl%,2) : _%hCtrl%,  _%hCtrl% := ""
     _%hCtrl%:=""
       gosub Attach_GetPos
-      loopparse, %aDef%, %A_Space%
+      loop parse, aDef, A_Space
       {
-        StrSplit, z, %A_LoopField%, :
+        z:=StrSplit(A_LoopField, ":")
         z1:=z.1
         _%hCtrl% .= A_LoopField="r" ? "r " : (z.1 ":" z.2 ":" c%z1% " ")
       }
@@ -140,7 +140,7 @@ Attach_(hCtrl, aDef, Msg, hParent){
       DllCall(adrWindowInfo, "ptr", hParent, "ptr", adrB), _%hParent%_pw := NumGet(B, 28,"UInt") - NumGet(B, 20,"UInt"), _%hParent%_ph := NumGet(B, 32,"UInt") - NumGet(B, 24,"UInt"), _%hParent%_s := !_%hParent%_pw || !_%hParent%_ph ? "" : _%hParent%_pw " " _%hParent%_ph
     
     if InStr(" " aDef " ", "p")
-      StrReplace, aDef, %aDef%, p, xp yp wp hp,,1
+      aDef:=StrReplace(aDef, "p", "xp yp wp hp",,1)
     if aDef="-"
       return SubStr(_%hCtrl%,1,1) != "-" ? _%hCtrl% := "-" _%hCtrl% : ""
     else if (aDef = "+")
@@ -150,7 +150,7 @@ Attach_(hCtrl, aDef, Msg, hParent){
     else {
       gosub Attach_GetPos
       _%hCtrl% := ""
-      loopparse, %aDef%, %A_Space%
+      loop parse, aDef, A_Space
       {			
         if (l := A_LoopField) = "-"	{
           _%hCtrl% := "-" _%hCtrl%
@@ -161,7 +161,7 @@ Attach_(hCtrl, aDef, Msg, hParent){
           k := SubStr(l, 2, j-2) / SubStr(l, j+1)
         _%hCtrl% .= f ":" k ":" c%f% " "
       }
-      return _%hCtrl% := SubStr(_%hCtrl%, 1, -1), _%hParent%a .= InStr(_%hParent%, hCtrl) ? "" : (_%hParent%a = "" ? "" : " ")  hCtrl 
+      return (_%hCtrl% := SubStr(_%hCtrl%, 1, -1), _%hParent%a .= InStr(_%hParent%, hCtrl) ? "" : (_%hParent%a = "" ? "" : " ")  hCtrl )
     }
   }
   if _%hParent%a=""
@@ -177,10 +177,10 @@ Attach_(hCtrl, aDef, Msg, hParent){
     _%hParent%_s := _%hParent%_pw " " _%hParent%_ph
 
   oldCritical := A_IsCritical
-  critical, 5000
+  critical 5000
 
-  StrSplit, s,% _%hParent%_s, %A_Space%
-  loopparse,% _%hParent%a, %A_Space%
+  s:=StrSplit(_%hParent%_s, A_Space)
+  loop parse,_%hParent%a, A_Space
   {
     hCtrl := A_LoopField, aDef := _%hCtrl%, 	uw := uh := ux := uy := r := 0, hCtrl1 := SubStr(_%hCtrl%,1,1)
     if (hCtrl1 = "-")
@@ -189,9 +189,9 @@ Attach_(hCtrl, aDef, Msg, hParent){
       else aDef := SubStr(aDef, 2)	
     
     gosub Attach_GetPos
-    loopparse, %aDef%, %A_Space%
+    loop parse, aDef, A_Space
     {
-      StrSplit, z,%A_LoopField%, :		; opt:coef:initial
+      z:=StrSplit(A_LoopField, ":")		; opt:coef:initial
       If z.1="r"
         r := z.2
       z1:=z.1
@@ -216,10 +216,10 @@ Attach_(hCtrl, aDef, Msg, hParent){
 Attach_redrawDelayed(hCtrl){
   static s
   s .= !InStr(s, hCtrl) ? hCtrl " " : ""
-  SetTimer, %A_ThisFunc%, -100
+  SetTimer A_ThisFunc, -100
   return
  Attach_redrawDelayed:
-  loopparse, %s%, %A_Space%
+  loop parse, s, A_Space
     DllCall("InvalidateRect", "ptr", A_LoopField, "ptr", 0, "int", true)
   s := ""
  return

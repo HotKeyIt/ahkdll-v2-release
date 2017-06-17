@@ -10,7 +10,7 @@ GlobalVarsScript(var:="",size:=102400,ByRef object:=0){
       globalVarsScript .= var ":= CriticalObject(" CriticalObject(object,1) "," CriticalObject(object,2) ")`n"
     }
   } else {
-    LoopParse,%Var%,|
+    Loop Parse, Var, "|"
     If !InStr(globalVarsScript,"Alias(" A_LoopField "," GetVar(%A_LoopField%) ")`n"){
       If size
         VarSetCapacity(%A_LoopField%,size,0)
