@@ -93,8 +93,8 @@ Gui, Add, CheckBox, x138 y282 w230 h20 vUseEncrypt gCheckCompression Checked%Las
 ToolTip.Add("Button8","Use AES encryption for resources (requires a Password)")
 Gui, Add, Edit,x370 y282 w100 h20 Password vUsePassword,AutoHotkey
 ToolTip.Add("Edit4","Enter password for encryption (default = AutoHotkey).`nAutoHotkey binary must be using this password internally")
-Gui, Add, CheckBox, x138 y304 w315 h20 gCheckCompression vUseMpress Checked%LastUseMPRESS%, Use UPX (if present) to compress resulting exe
-ToolTip.Add("Button9","UPX makes executables smaller and decreases start time when loaded from slow media")
+Gui, Add, CheckBox, x138 y304 w315 h20 gCheckCompression vUseMpress Checked%LastUseMPRESS%, Use MPRESS (if present) to compress resulting exe
+ToolTip.Add("Button9","MPRESS makes executables smaller and decreases start time when loaded from slow media")
 Gui, Add, Button, x235 y338 w125 h28 +Default gConvert, > &Compile Executable <
 ToolTip.Add("Button10","Convert script to executable file")
 Gui, Add, StatusBar,, Ready

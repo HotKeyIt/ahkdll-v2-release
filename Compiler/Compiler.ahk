@@ -26,12 +26,12 @@ AhkCompile(ByRef AhkFile, ExeFile := "", ByRef CustomIcon := "", BinFile := "", 
 	
 	BundleAhkScript(ExeFile, AhkFile, CustomIcon, UseCompression, UsePassword)
 	
-	if FileExist(A_ScriptDir "\upx.exe") && UseMPRESS
+	if FileExist(A_ScriptDir "\mpress.exe") && UseMPRESS
 	{
 		If !CLIMode,	SB_SetText("Compressing final executable...")
 		if UseCompression ; do not compress resources
-			RunWait, "%A_ScriptDir%\upx.exe" -q -x -r "%ExeFile%",, Hide
-		else RunWait, "%A_ScriptDir%\upx.exe" -q -x "%ExeFile%",, Hide
+			RunWait, "%A_ScriptDir%\mpress.exe" -q -x -r "%ExeFile%",, Hide
+		else RunWait, "%A_ScriptDir%\mpress.exe" -q -x "%ExeFile%",, Hide
 	}
 	
 	SetCursor(LoadCursor(0, 32512)) ; Util_HideHourglass()
