@@ -4,7 +4,8 @@
 
 SetExeSubsystem(exepath, subSys)
 {
-	if !exe := FileOpen(exepath, "rw", "UTF-8-RAW"),	return false
+	if !exe := FileOpen(exepath, "rw", "UTF-8-RAW")
+    return false
 	; By mere coincidence the address of OptHeader->Subsystem is the same for both 32 and 64-bit executables
-	return exe.Seek(60), exe.Seek(exe.ReadUInt()+92),exe.WriteUShort(subSys),	 true
+	return (exe.Seek(60), exe.Seek(exe.ReadUInt()+92),exe.WriteUShort(subSys),	 true)
 }

@@ -18,7 +18,7 @@
 #Include %A_ScriptDir%
 #Include Compiler.ahk
 SendMode Input
-Menu,Tray,Icon,%A_AhkPath%,2
+Menu "Tray","Icon",A_AhkPath,2
 
 global DEBUG := !A_IsCompiled
 
@@ -37,133 +37,111 @@ BinFileId := FindBinFile(LastBinFile)
 
 #include *i __debug.ahk
 
-ToolTip:=TT("Parent=1")
+Menu "FileMenu", "Add", "&Convert", "Convert"
+Menu "FileMenu", "Add"
+Menu "FileMenu", "Add", "E&xit`tAlt+F4", "GuiClose"
+Menu "HelpMenu", "Add", "&Help", "Help"
+Menu "HelpMenu", "Add"
+Menu "HelpMenu", "Add", "&About", "About"
+Menu "MenuBar", "Add", "&File", ":FileMenu"
+Menu "MenuBar", "Add", "&Help", ":HelpMenu"
 
-Menu, FileMenu, Add, &Convert, Convert
-Menu, FileMenu, Add
-Menu, FileMenu, Add, E&xit`tAlt+F4, GuiClose
-Menu, HelpMenu, Add, &Help, Help
-Menu, HelpMenu, Add
-Menu, HelpMenu, Add, &About, About
-Menu, MenuBar, Add, &File, :FileMenu
-Menu, MenuBar, Add, &Help, :HelpMenu
-Gui, Menu, MenuBar
-
-Gui, +LastFound
-GuiHwnd := WinExist("")
-Gui, Add, Link, x287 y10,
-(
+Gui :=GuiCreate()
+ToolTip:=TT(Gui.Hwnd)
+Gui.OnEvent("Close","GuiClose")
+Gui.OnEvent("DropFiles","GuiDropFiles")
+Gui.Menu := "MenuBar"
+Gui.AddLink "x287 y10","
+(Q
 ©2004-2009 Chris Mallet
 ©2008-2011 Steve Gray (Lexikos)
-©2011-%A_Year% fincs
-©2012-%A_Year% HotKeyIt
-<a href="http://ahkscript.org">http://ahkscript.org</a>
+©2011-" A_Year "  fincs
+©2012-" A_Year " HotKeyIt
+<a href=`"http://ahkscript.org`">http://ahkscript.org</a>
 Note: Compiling does not guarantee source code protection.
-)
-Gui, Add, Text, x11 y97 w570 h2 +0x1007
-Gui, Font, Bold
-Gui, Add, GroupBox, x11 y104 w570 h81, Required Parameters
-Gui, Font, Normal
-Gui, Add, Text, x17 y126, &Source (script file)
-Gui, Add, Edit, x137 y121 w315 h23 +ReadOnly -WantTab vAhkFile, %AhkFile%
+)"
+Gui.AddText "x11 y97 w570 h2 +0x1007"
+Gui.SetFont("Bold")
+Gui.AddGroupBox "x11 y104 w570 h81", "Required Parameters"
+Gui.SetFont("Normal")
+Gui.AddText "x17 y126", "&Source (script file)"
+GuiBrowseAhk:=Gui.AddEdit("x137 y121 w315 h23 +ReadOnly -WantTab vAhkFile", AhkFile)
 ToolTip.Add("Edit1","Select path of AutoHotkey Script to compile")
-Gui, Add, Button, x459 y121 w53 h23 gBrowseAhk, &Browse
+(GuiButton2:=Gui.AddButton("x459 y121 w53 h23", "&Browse")).OnEvent("Click","BrowseAhk")
 ToolTip.Add("Button2","Select path of AutoHotkey Script to compile")
-Gui, Add, Text, x17 y155, &Destination (.exe file)
-Gui, Add, Edit, x137 y151 w315 h23 +ReadOnly -WantTab vExeFile, %Exefile%
+Gui.AddText "x17 y155", "&Destination (.exe file)"
+GuiBrowseExe:=Gui.AddEdit("x137 y151 w315 h23 +ReadOnly -WantTab vExeFile", Exefile)
 ToolTip.Add("Edit2","Select path to resulting exe / dll")
-Gui, Add, Button, x459 y151 w53 h23 gBrowseExe, B&rowse
+(GuiButton3:=Gui.AddButton("x459 y151 w53 h23", "B&rowse")).OnEvent("Click","BrowseExe")
 ToolTip.Add("Button3","Select path to resulting exe / dll")
-Gui, Font, Bold
-Gui, Add, GroupBox, x11 y187 w570 h148, Optional Parameters
-Gui, Font, Normal
-Gui, Add, Text, x18 y208, Custom Icon (.ico file)
-Gui, Add, Edit, x138 y204 w315 h23 +ReadOnly vIcoFile, %IcoFile%
+Gui.SetFont("Bold")
+Gui.AddGroupBox "x11 y187 w570 h148", "Optional Parameters"
+Gui.SetFont("Normal")
+Gui.AddText "x18 y208", "Custom Icon (.ico file)"
+GuiBrowseIco:=Gui.AddEdit("x138 y204 w315 h23 +ReadOnly vIcoFile", IcoFile)
 ToolTip.Add("Edit3","Select Icon to use in resulting exe / dll")
-Gui, Add, Button, x461 y204 w53 h23 gBrowseIco, Br&owse
+(GuiButton4:=Gui.AddButton("x461 y204 w53 h23", "Br&owse")).OnEvent("Click","BrowseIco")
 ToolTip.Add("Button5","Select Icon to use in resulting exe / dll")
-Gui, Add, Button, x519 y204 w53 h23 gDefaultIco, D&efault
+Gui.AddButton("x519 y204 w53 h23", "D&efault").OnEvent("Click","DefaultIco")
 ToolTip.Add("Button6","Use default Icon")
-Gui, Add, Text, x18 y237, Base File (.bin)
-Gui, Add, DDL, x138 y233 w315 h23 R10 AltSubmit vBinFileId Choose%BinFileId%, %BinNames%
+Gui.AddText "x18 y237", "Base File (.bin)"
+Gui.AddDDL "x138 y233 w315 h23 R10 AltSubmit vBinFileId Choose" BinFileId, BinNames
 ToolTip.Add("ComboBox1","Select AutoHotkey binary file to use for compilation")
-Gui, Add, CheckBox, x138 y260 w315 h20 gCheckCompression vUseCompression Checked%LastUseCompression%, Use compression to reduce size of resulting executable
+(GuiUseCompression:=Gui.AddCheckBox("x138 y260 w315 h20 vUseCompression Checked" LastUseCompression, "Use compression to reduce size of resulting executable")).OnEvent("Click","CheckCompression")
 ToolTip.Add("Button7","Compress all resources")
-Gui, Add, CheckBox, x138 y282 w230 h20 vUseEncrypt gCheckCompression Checked%LastUseEncrypt%, Encrypt. Enter password used in executable:
+(GuiUseEncrypt:=Gui.AddCheckBox("x138 y282 w230 h20 vUseEncrypt Checked" LastUseEncrypt, "Encrypt. Enter password used in executable:")).OnEvent("Click","CheckCompression")
 ToolTip.Add("Button8","Use AES encryption for resources (requires a Password)")
-Gui, Add, Edit,x370 y282 w100 h20 Password vUsePassword,AutoHotkey
+Gui.AddEdit "x370 y282 w100 h20 Password vUsePassword", "AutoHotkey"
 ToolTip.Add("Edit4","Enter password for encryption (default = AutoHotkey).`nAutoHotkey binary must be using this password internally")
-Gui, Add, CheckBox, x138 y304 w315 h20 gCheckCompression vUseMpress Checked%LastUseMPRESS%, Use MPRESS (if present) to compress resulting exe
+(GuiUseMPRESS:=Gui.AddCheckBox("x138 y304 w315 h20 vUseMpress Checked" LastUseMPRESS, "Use MPRESS (if present) to compress resulting exe")).OnEvent("Click","CheckCompression")
 ToolTip.Add("Button9","MPRESS makes executables smaller and decreases start time when loaded from slow media")
-Gui, Add, Button, x235 y338 w125 h28 +Default gConvert, > &Compile Executable <
+Gui.AddButton("x235 y338 w125 h28 +Default", "> &Compile Executable <").OnEvent("Click","Convert")
 ToolTip.Add("Button10","Convert script to executable file")
-Gui, Add, StatusBar,, Ready
+GuiStatusBar:=Gui.AddStatusBar(, "Ready")
 ;@Ahk2Exe-IgnoreBegin
-Gui, Add, Pic, x30 y5 +0x801000, %A_ScriptDir%\logo.png
+Gui.AddPic "x30 y5 +0x801000", A_ScriptDir "\logo.png"
 ;@Ahk2Exe-IgnoreEnd
 /*@Ahk2Exe-Keep
 gosub AddPicture
 */
-Gui, Show, w594 h400, Ahk2Exe for AutoHotkey v%A_AhkVersion% -- Script to EXE Converter
-ControlFocus,Button2, ahk_id %GuiHwnd%
+Gui.Show "w594 h400", "Ahk2Exe for AutoHotkey v" A_AhkVersion " -- Script to EXE Converter"
+GuiButton2.Focus()
 Return:
 return
 
-CheckCompression:
-Gui,Submit,NoHide
-If A_GuiControl="UseCompression" && !UseCompression{
-	GuiControl,,UseEncrypt,0
-	GuiControl,,UseCompression,0
-} else If A_GuiControl="UseEncrypt" && UseEncrypt{
-	GuiControl,,UseCompression,1
+CheckCompression(Control){
+  global
+  GuiSubMit := Gui.SubMit(0)
+  If Control.name="UseCompression" && !GuiSubMit.UseCompression{
+    GuiUseEncrypt.value := false
+    GuiUseCompression.value := false
+  } else If Control.Name="UseEncrypt" && GuiSubMit.UseEncrypt{
+    GuiUseCompression := true
+  }
 }
-Return
 
-CheckInclude:
-Gui,Submit,NoHide
-If A_GuiControl="UseInclude" && UseInclude{
-	GuiControl,,UseIncludeResource,0
-	GuiControl,,UseIncludeLib,0
-} else If A_GuiControl="UseIncludeResource" && UseIncludeResource{
-	GuiControl,,UseInclude,0
-	GuiControl,,UseIncludeLib,0
-} else If A_GuiControl="UseIncludeLib" && UseIncludeLib{
-	GuiControl,,UseInclude,0
-	GuiControl,,UseIncludeResource,0
-} else If A_GuiControl="UseInclude" && !UseInclude{
-	GuiControl,,UseIncludeResource,1
-	GuiControl,,UseIncludeLib,0
-} else If A_GuiControl="UseIncludeResource" && !UseIncludeResource{
-	GuiControl,,UseInclude,1
-	GuiControl,,UseIncludeLib,0
-} else If A_GuiControl="UseIncludeLib" && !UseIncludeLib{
-	GuiControl,,UseInclude,1
-	GuiControl,,UseIncludeResource,0
+GuiClose(){
+  gosub SaveSettings
+  ExitApp
 }
-Return
 
-GuiClose:
-Gui, Submit
-gosub SaveSettings
-ExitApp
-
-GuiDropFiles:
-if A_EventInfo > 2
-	Util_Error("You cannot drop more than one file into this window!")
-SplitPath, %A_GuiEvent%,,, dropExt
-if (dropExt = "ahk")
-	GuiControl,, AhkFile, %A_GuiEvent%
-else if (dropExt = "ico")
-	GuiControl,, IcoFile, %A_GuiEvent%
-else if InStr(".exe.dll.","." dropExt ".")
-	GuiControl,, ExeFile, %A_GuiEvent%
-return
+GuiDropFiles(){
+  if A_EventInfo > 2
+    Util_Error("You cannot drop more than one file into this window!")
+  SplitPath A_GuiEvent,,, dropExt
+  if (dropExt = "ahk")
+    GuiBrowseAhk.text :=A_GuiEvent
+  else if (dropExt = "ico")
+    GuiBrowseIco.text :=A_GuiEvent
+  else if InStr(".exe.dll.","." dropExt ".")
+    GuiBrowseExe.text := A_GuiEvent
+}
 
 /*@Ahk2Exe-Keep
 
 AddPicture:
 ; Code based on http://www.autohotkey.com/forum/viewtopic.php?p=147052
-Gui, Add, Text, x40 y5 +0x80100E hwndhPicCtrl
+GuiPicCtrl:=Gui.AddText("x40 y5 +0x80100E")
 
 ;@Ahk2Exe-AddResource logo.png
 hRSrc := FindResource(0, "LOGO.PNG", 10)
@@ -184,8 +162,8 @@ VarSetCapacity(si, 16, 0), NumPut(1, si, "UChar")
 GdiplusStartup(getvar(gdipToken:=0), &si)
 GdipCreateBitmapFromStream(pStream, getvar(pBitmap:=0))
 GdipCreateHBITMAPFromBitmap(pBitmap, getvar(hBitmap:=0))
-SendMessage, 0x172, 0, %hBitmap%,, ahk_id %hPicCtrl% ; 0x172=STM_SETIMAGE, 0=IMAGE_BITMAP
-GuiControl, Move, %hPicCtrl%, w240 h78
+SendMessage, 0x172, 0, hBitmap,, "ahk_id " GuiPicCtrl.hwnd ; 0x172=STM_SETIMAGE, 0=IMAGE_BITMAP
+GuiPicCtrl.Move("w240 h78")
 
 GdipDisposeImage(pBitmap)
 GdiplusShutdown(gdipToken)
@@ -199,31 +177,31 @@ BuildBinFileList:
 BinFiles := ["Please Select"]
 If FileExist(A_AhkDir "\AutoHotkeySC.bin"){
 	BinFiles.1:=A_AhkDir "\AutoHotkeySC.bin"
-	SplitPath,% BinFiles.1,,d,, n
-	FileGetVersion, v, % BinFiles.1
+	SplitPath BinFiles.1,,d,, n
+	v:=FileGetVersion(BinFiles.1)
 	BinNames := "v" v " " n ".bin (..\" SubStr(d,InStr(d,"\",1,-1)+1) ")"
 } else BinNames := "Please Select"
 
-LoopFiles, %A_ScriptDir%\..\*.bin,FR
+Loop Files, A_ScriptDir "\..\*.bin","FR"
 {
-	SplitPath,% A_LoopFileFullPath,,d,, n
-	FileGetVersion, v, %A_LoopFileFullPath%
+	SplitPath A_LoopFileFullPath,,d,, n
+	v :=FileGetVersion(A_LoopFileFullPath)
 	BinFiles.Push(A_LoopFileFullPath)
 	BinNames .= "|v" v " " n ".bin (..\" SubStr(d,InStr(d,"\",1,-1)+1) ")"
 }
-LoopFiles, %A_ScriptDir%\..\*.exe,FR
+Loop Files, A_ScriptDir "\..\*.exe","FR"
 {
-	SplitPath,% A_LoopFileFullPath,,d,, n
-	FileGetVersion, v, %A_LoopFileFullPath%
+	SplitPath A_LoopFileFullPath,,d,, n
+	v:=FileGetVersion(A_LoopFileFullPath)
 	If !InStr(FileGetInfo(A_LoopFileFullPath,"FileDescription"),"AutoHotkey")
 		continue
 	BinFiles.Push(A_LoopFileFullPath)
 	BinNames .= "|v" v " " n ".exe" " (..\" SubStr(d,InStr(d,"\",1,-1)+1) ")"
 }
-LoopFiles, %A_ScriptDir%\..\*.dll,FR
+Loop Files, A_ScriptDir "\..\*.dll","FR"
 {
-  SplitPath,% A_LoopFileFullPath,,d,, n
-	FileGetVersion, v, %A_LoopFileFullPath%
+  SplitPath A_LoopFileFullPath,,d,, n
+	v:=FileGetVersion(A_LoopFileFullPath)
 	If !InStr(FileGetInfo(A_LoopFileFullPath,"FileDescription"),"AutoHotkey")
 		continue
 	BinFiles.Push(A_LoopFileFullPath)
@@ -248,7 +226,7 @@ if !A_Args.Length()
 Error_ForceExit := true
 
 p := []
-Loop % A_Args.Length()
+Loop A_Args.Length()
 {
 	; if (A_Args[A_Index] = "/NoDecompile")
 		; Util_Error("Error: /NoDecompile is not supported.")
@@ -259,7 +237,7 @@ Loop % A_Args.Length()
 if Mod(p.Length(), 2)
 	goto BadParams
 
-Loop, % p.Length() // 2
+Loop p.Length() // 2
 {
 	p1 := p[2*(A_Index-1)+1]
 	p2 := p[2*(A_Index-1)+2]
@@ -293,7 +271,7 @@ global CLIMode := true
 return
 
 BadParams:
-MsgBox, 64, Ahk2Exe, Command Line Parameters:`n`n%A_ScriptName% /in infile.ahk [/out outfile.exe] [/icon iconfile.ico] [/bin AutoHotkeySC.bin]
+MsgBox "Command Line Parameters:`n`n%A_ScriptName% /in infile.ahk [/out outfile.exe] [/icon iconfile.ico] [/bin AutoHotkeySC.bin]", "Ahk2Exe", 64
 ExitApp
 
 _ProcessIn:
@@ -324,73 +302,77 @@ _ProcessMPRESS:
 UseMPRESS := p2
 return
 
-BrowseAhk:
-Gui, +OwnDialogs
-FileSelect, ov, 1, %LastScriptDir%, Open, AutoHotkey files (*.ahk)
-if ErrorLevel
-	return
-GuiControl,, AhkFile, %ov%
-return
-
-BrowseExe:
-Gui, +OwnDialogs
-FileSelect, ov, S16, %LastExeDir%, Save As, Executable files (*.exe;*.dll)
-if ErrorLevel
-	return
-SplitPath, %ov%,,, ovExt
-if !StrLen(ovExt) ;~ append a default file extension is none specified
-	ov .= ".exe"
-GuiControl,, ExeFile, %ov%
-return
-
-BrowseIco:
-Gui, +OwnDialogs
-FileSelect, ov, 1, %LastIconDir%, Open, Icon files (*.ico)
-if ErrorLevel
-	return
-GuiControl,, IcoFile, %ov%
-return
-
-DefaultIco:
-GuiControl,, IcoFile
-return
-
-Convert:
-Gui, +OwnDialogs
-Gui, Submit, NoHide
-BinFile := BinFiles[BinFileId]
-ConvertCLI:
-If UseEncrypt && !UsePassword
-{
-	if !CLIMode
-		MsgBox, 64, Ahk2Exe, Error compiling`, no password supplied: %ExeFile%
-	else
-		FileAppend, Error compiling`, no password supplied: %ExeFile%`n, *
-	return
+BrowseAhk(Control){
+  global
+  ov := FileSelect(1, LastScriptDir, "Open", "AutoHotkey files (*.ahk)")
+  if ErrorLevel
+    return
+  GuiBrowseAhk.text:=ov
 }
-; else If UseEncrypt && SubStr(BinFile,-4)!=".bin"
-; {
-	; if !CLIMode
-		; MsgBox, 64, Ahk2Exe, Resulting exe will not be protected properly, use AutoHotkeySC.bin file to have more secure protection.
-	; else
-		; FileAppend, Warning`, Resulting exe will not be protected properly`, use AutoHotkeySC.bin file to have more secure protection.: %ExeFile%`n, *
-; }
-AhkCompile(AhkFile, ExeFile, IcoFile, BinFile, UseMpress, UseCompression, UseInclude, UseIncludeResource, UseEncrypt?UsePassword:"")
-if !CLIMode
-	MsgBox, 64, Ahk2Exe, Conversion complete.
-else
-	FileAppend, Successfully compiled: %ExeFile%`n, *
-return
+
+BrowseExe(Control){
+  global
+  ov :=FileSelect("S16", LastExeDir, "Save As", "Executable files (*.exe;*.dll)")
+  if ErrorLevel
+    return
+  SplitPath ov,,, ovExt
+  if !StrLen(ovExt) ;~ append a default file extension is none specified
+    ov .= ".exe"
+  GuiBrowseExe.text:=ov
+}
+
+BrowseIco(Control){
+  ov:=FileSelect(1, LastIconDir, "Open", "Icon files (*.ico)")
+  if ErrorLevel
+    return
+  GuiBrowseIco.text:= ov
+}
+
+DefaultIco(Control){
+  global
+  GuiBrowseIco.text :=IcoFile
+}
+
+
+ConvertCLI:
+  If UseEncrypt && !UsePassword
+  {
+    FileAppend "Error compiling`, no password supplied: " ExeFile "`n", "*"
+    return
+  }
+  AhkCompile(AhkFile, ExeFile, IcoFile, BinFile, UseMpress, UseCompression, UseInclude, UseIncludeResource, UseEncrypt?UsePassword:"")
+  FileAppend "Successfully compiled: " ExeFile "`n", "*"
+Return
+
+Convert(){
+  global
+  guiSubMit := Gui.SubMit(0)
+  BinFile := BinFiles[BinFileId]
+  If UseEncrypt && !UsePassword
+  {
+    MsgBox "Error compiling`, no password supplied: " ExeFile, "Ahk2Exe", 64
+    return
+  }
+  ; else If UseEncrypt && SubStr(BinFile,-4)!=".bin"
+  ; {
+    ; if !CLIMode
+      ; MsgBox, 64, Ahk2Exe, Resulting exe will not be protected properly, use AutoHotkeySC.bin file to have more secure protection.
+    ; else
+      ; FileAppend, Warning`, Resulting exe will not be protected properly`, use AutoHotkeySC.bin file to have more secure protection.: %ExeFile%`n, *
+  ; }
+  AhkCompile(guiSubMit.AhkFile, guiSubMit.ExeFile, guiSubMit.IcoFile, BinFiles[guiSubMit.BinFileId], guiSubMit.UseMpress, guiSubMit.UseCompression, guiSubMit.UseInclude, guiSubMit.UseIncludeResource, guiSubMit.UseEncrypt?guiSubMit.UsePassword:"")
+  MsgBox "Conversion complete.", "Ahk2Exe", 64
+}
 
 LoadSettings:
-RegRead, LastScriptDir, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastScriptDir
-RegRead, LastExeDir, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastExeDir
-RegRead, LastIconDir, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastIconDir
-RegRead, LastIcon, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastIcon
-RegRead, LastBinFile, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastBinFile
-RegRead, LastUseCompression, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastUseCompression
-RegRead, LastUseMPRESS, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastUseMPRESS
-RegRead, LastUseEncrypt, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastUseEncrypt
+LastScriptDir:=RegRead("HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastScriptDir")
+LastExeDir:=RegRead("HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastExeDir")
+LastIconDir:=RegRead("HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastIconDir")
+LastIcon:=RegRead("HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastIcon")
+LastBinFile:=RegRead("HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastBinFile")
+LastUseCompression:=RegRead("HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastUseCompression")
+LastUseMPRESS:=RegRead("HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastUseMPRESS")
+LastUseEncrypt:=RegRead("HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastUseEncrypt")
 
 if !FileExist(LastIcon)
 	LastIcon := ""
@@ -402,60 +384,60 @@ if LastUseMPRESS
 return
 
 SaveSettings:
-SplitPath,% AhkFile,, AhkFileDir
-if ExeFile
-	SplitPath,% ExeFile,, ExeFileDir
+guiSubMit:=Gui.SubMit(0)
+SplitPath guiSubMit.AhkFile,, AhkFileDir
+if guiSubMit.ExeFile
+	SplitPath guiSubMit.ExeFile,, ExeFileDir
 else
 	ExeFileDir := LastExeDir
-if IcoFile
-	SplitPath,% IcoFile,, IcoFileDir
+if guiSubMit.IcoFile
+	SplitPath guiSubMit.IcoFile,, IcoFileDir
 else
 	IcoFileDir := ""
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastScriptDir, %AhkFileDir%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastExeDir, %ExeFileDir%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastIconDir, %IcoFileDir%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastIcon, %IcoFile%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastUseCompression, %UseCompression%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastUseMPRESS, %UseMPRESS%
-RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastUseEncrypt, %UseEncrypt%
+RegWrite AhkFileDir, "REG_SZ", "HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastScriptDir"
+RegWrite ExeFileDir, "REG_SZ", "HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastExeDir"
+RegWrite IcoFileDir, "REG_SZ", "HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastIconDir"
+RegWrite guiSubMit.IcoFile, "REG_SZ", "HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastIcon"
+RegWrite guiSubMit.UseCompression, "REG_SZ", "HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastUseCompression"
+RegWrite guiSubMit.UseMPRESS, "REG_SZ", "HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastUseMPRESS"
+RegWrite guiSubMit.UseEncrypt, "REG_SZ", "HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastUseEncrypt"
 if !CustomBinFile
-	RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H, LastBinFile,% BinFiles[BinFileId]
+	RegWrite BinFiles[guiSubMit.BinFileId], "REG_SZ", "HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastBinFile"
 return
 
 Help:
 If !FileExist(helpfile := A_ScriptDir "\..\AutoHotkey.chm")
 	Util_Error("Error: cannot find AutoHotkey help file!")
 
-#DllImport,HtmlHelp,hhctrl.ocx\HtmlHelp,PTR,,Str,,UInt,,PTR,
+#DllImport HtmlHelp,hhctrl.ocx\HtmlHelp,PTR,,Str,,UInt,,PTR,
 VarSetCapacity(ak, ak_size := 8+5*A_PtrSize+4, 0) ; HH_AKLINK struct
 ,NumPut(ak_size, ak, 0, "UInt"),name := "Ahk2Exe",NumPut(&name, ak, 8)
-,HtmlHelp(GuiHwnd, helpfile, 0x000D, &ak) ; 0x000D: HH_KEYWORD_LOOKUP
+,HtmlHelp(Gui.Hwnd, helpfile, 0x000D, &ak) ; 0x000D: HH_KEYWORD_LOOKUP
 return
 
-About:
-Gui, +OwnDialogs
-MsgBox, 64, About Ahk2Exe,
-(
-Ahk2Exe - Script to EXE Converter
+About(){
+  MsgBox "
+  (
+  Ahk2Exe - Script to EXE Converter
 
-Original version:
-  Copyright @1999-2003 Jonathan Bennett & AutoIt Team
-  Copyright @2004-2009 Chris Mallet
-  Copyright @2008-2011 Steve Gray (Lexikos)
+  Original version:
+    Copyright @1999-2003 Jonathan Bennett & AutoIt Team
+    Copyright @2004-2009 Chris Mallet
+    Copyright @2008-2011 Steve Gray (Lexikos)
 
-Script rewrite:
-  Copyright @2011-%A_Year% fincs
-  Copyright @2012-%A_Year% HotKeyIt
-)
-return
+  Script rewrite:
+    Copyright @2011-%A_Year% fincs
+    Copyright @2012-%A_Year% HotKeyIt
+  )", "About Ahk2Exe", 64
+}
 
 Util_Error(txt, doexit := 1, extra := "")
 {
-	global CLIMode, Error_ForceExit, ExeFileTmp
+	global CLIMode, Error_ForceExit, ExeFileTmp, GuiStatusBar
 	
 	if ExeFileTmp && FileExist(ExeFileTmp)
 	{
-		FileDelete, %ExeFileTmp%
+		FileDelete ExeFileTmp
 		ExeFileTmp := ""
 	}
 	
@@ -463,11 +445,11 @@ Util_Error(txt, doexit := 1, extra := "")
 		txt .= "`n`n" extra
 	
 	SetCursor(LoadCursor(0, 32512)) ;Util_HideHourglass()
-	MsgBox, 16, Ahk2Exe Error, % txt
+	MsgBox txt, "Ahk2Exe Error", 16
 	
 	if CLIMode
-		FileAppend, Failed to compile: %ExeFile%`n, *
-	else	SB_SetText("Ready")
+		FileAppend "Failed to compile: " ExeFile "`n", "*"
+	else	GuiStatusBar.SetText("Ready")
 	
 	if doexit
 		if !Error_ForceExit

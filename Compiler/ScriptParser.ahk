@@ -1,7 +1,8 @@
 
 PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstScriptDir := "", Options := "", iOption := 0)
 {
-	SplitPath,%AhkScript%, ScriptName, ScriptDir
+  global GuiStatusBar
+	SplitPath AhkScript, ScriptName, ScriptDir
 	if !IsObject(FileList)
 	{
 		FileList := [AhkScript]
@@ -11,7 +12,7 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 		Options := { comm: ";", esc: "``", directives: [] }
 		
 		OldWorkingDir := A_WorkingDir
-		SetWorkingDir, %ScriptDir%
+		SetWorkingDir ScriptDir
 	}
 	
 	If !FileExist(AhkScript)
@@ -20,7 +21,7 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 		else return
 	
 	cmtBlock := false, contSection := false, ignoreSection := false
-	LoopRead, %AhkScript%
+	Loop Read, AhkScript
 	{
 		tline := Trim(A_LoopReadLine)
 		if !cmtBlock
@@ -80,13 +81,11 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 					}
 				}
 				
-				StrReplace, IncludeFile, %IncludeFile%, `%A_ScriptDir`%, %FirstScriptDir%
-				StrReplace, IncludeFile, %IncludeFile%, `%A_AppData`%, %A_AppData%
-				StrReplace, IncludeFile, %IncludeFile%, `%A_AppDataCommon`%, %A_AppDataCommon%
+				IncludeFile:=StrReplace(StrReplace(StrReplace(IncludeFile, "`%A_ScriptDir`%", FirstScriptDir), "`%A_AppData`%", A_AppData), "`%A_AppDataCommon`%", A_AppDataCommon)
 				
 				if FileExist(IncludeFile) = "D"
 				{
-					SetWorkingDir, %IncludeFile%
+					SetWorkingDir IncludeFile
 					continue
 				}
 				
@@ -115,9 +114,7 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 					Util_Error("Error: Invalid `"FileInstall`" syntax found. Note that the first parameter must not be specified using a continuation section.")
 				_ := Options.esc
 				o1:=o.1
-				StrReplace, o1, %o1%, %_%`%, `%
-				StrReplace, o1, %o1%, %_%`,, `,
-				StrReplace, o1, %o1%, %_%%_%, %_%
+				o1:=StrReplace(StrReplace(StrReplace(o1, _ "`%", "`%"), _ "`,", "`,"), o1, _ _, _)
 				ExtraFiles.Push(Trim(o1,"`""))
 				ScriptText .= tline "`n"
 			}else if !contSection && RegExMatch(tline, "i)^#CommentFlag\s+(.+)$", o)
@@ -134,45 +131,46 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 			cmtBlock := false
 	}
 	
-	Loop, % !!IsFirstScript ; equivalent to "if IsFirstScript" except you can break from the block
+	Loop !!IsFirstScript ; equivalent to "if IsFirstScript" except you can break from the block
 	{
-		If !CLIMode,	SB_SetText("Auto-including any functions called from a library...")
+		If !CLIMode
+      GuiStatusBar.SetText("Auto-including any functions called from a library...")
 		ilibfile := FirstScriptDir "\FAF4D55FBB00419A9ECFFE26ED983E93.ahk"
-		FileDelete, %ilibfile%
-		FileDelete, %ilibfile%.script
-		FileDelete, %ilibfile%.error
+		FileDelete ilibfile
+		FileDelete ilibfile ".script"
+		FileDelete ilibfile ".error"
 		static AhkPath := A_AhkPath ;A_IsCompiled ? A_ScriptDir "\..\AutoHotkey.exe" : A_AhkPath
 		AhkType := AHKType(AhkPath)
 		if AhkType = "FAIL"
 			Util_Error("Error: The AutoHotkey build used for auto-inclusion of library functions is not recognized.", 1, AhkPath)
 		if AhkType = "Legacy"
 			Util_Error("Error: Legacy AutoHotkey versions (prior to v1.1) are not allowed as the build used for auto-inclusion of library functions.", 1, AhkPath)
-		FileAppend,%ScriptText%,%ilibfile%.script, UTF-8
-    RunWait, % "`"" A_Comspec "`" /C `"`"" AhkPath "`" /iLib `"" ilibfile "`" /ErrorStdOut /E `"" ilibfile ".script`" 2>`"" ilibfile ".error`"`"", %FirstScriptDir%, HIDE UseErrorLevel
+		FileAppend ScriptText,ilibfile ".script", UTF-8
+    RunWait "`"" A_Comspec "`" /C `"`"" AhkPath "`" /iLib `"" ilibfile "`" /ErrorStdOut `"" ilibfile ".script`" 2>`"" ilibfile ".error`"`"", FirstScriptDir, "HIDE UseErrorLevel"
 		if (ErrorLevel = 2)
 		{		
-			FileRead,script_error,%ilibfile%.error
-			FileDelete, %ilibfile%.error
+			script_error:=FileRead(ilibfile ".error")
+			FileDelete ilibfile ".error"
 			line_error:=SubStr(line_error:=SubStr(script_error,StrLen(ilibfile) + 10),1,InStr(line_error,")")-1)
-			LoopParse,%ScriptText%,`n,`r
+			Loop Parse, ScriptText,"`n","`r"
 				If (A_Index=line_error){
 					line_error:=A_LoopField
 					break
 				}
-			FileDelete, %ilibfile%
-			FileDelete, %ilibfile%.script
+			FileDelete ilibfile
+			FileDelete ilibfile ".script"
 			Util_Error("Error: The script contains syntax errors.",true,line_error "`n" SubStr(script_error,StrLen(ilibfile) + 9))
 		}
 		If FileExist(ilibfile)
 			PreprocessScript(ScriptText, ilibfile, ExtraFiles, FileList, FirstScriptDir, Options)
-		FileDelete, %ilibfile%
-		FileDelete, %ilibfile%.script
-		FileDelete, %ilibfile%.error
+		FileDelete ilibfile
+		FileDelete ilibfile ".script"
+		FileDelete ilibfile ".error"
 		ScriptText:=SubStr(ScriptText, 1,-1) ; remove trailing newline
 	}
 	
 	if OldWorkingDir
-		SetWorkingDir, %OldWorkingDir%
+		SetWorkingDir OldWorkingDir
 	
 	if IsFirstScript
 		return Options.directives
@@ -180,7 +178,7 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 
 FindLibraryFile(name, ScriptDir)
 {
-	FileGetShortCut,%A_AhkPath%\lib.lnk,target
+	FileGetShortCut A_AhkPath "\lib.lnk",target
 	libs := [ScriptDir "\Lib", A_MyDocuments "\AutoHotkey\Lib", A_ScriptDir "\..\Lib", A_AhkPath "\Lib",A_ScriptDir "\..\..\Lib",target]
 	if p := InStr(name, "_")
 		name_lib := SubStr(name, 1, p-1)
@@ -208,7 +206,7 @@ StrStartsWith(ByRef v, ByRef w)
 RegExEscape(t)
 {
 	static _ := "\.*?+[{|()^$"
-	LoopParse, %_%
-		StrReplace, t, %t%, %A_LoopField%, \%A_LoopField%
+	Loop Parse, _
+		t:=StrReplace(t, A_LoopField, "\" A_LoopField)
 	return t
 }

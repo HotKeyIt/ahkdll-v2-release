@@ -24,10 +24,10 @@ ReplaceAhkIcon(re, IcoFile, ExeFile, iconID := 159)
 	ige := &rsrcIconGroup + 6
 	
 	; Delete all the images
-	Loop, % ids.Length()
+	Loop ids.Length()
 		UpdateResource(re, 3, ids[A_Index], 0x409)
 	
-	Loop, wCount
+	Loop wCount
 	{
 		thisID := ids[A_Index]
 		if !thisID
@@ -78,7 +78,7 @@ EnumIcons(ExeFile, iconID)
 	
 	wCount := NumGet(pDirHeader+4, "UShort")
 	,iconIDs := []
-	Loop, wCount
+	Loop wCount
 	{
 		pResDirEntry := pResDir + (A_Index-1)*14
 		iconIDs[A_Index] := NumGet(pResDirEntry+12, "UShort")

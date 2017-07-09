@@ -4,11 +4,11 @@
 
 AhkCompile(ByRef AhkFile, ExeFile := "", ByRef CustomIcon := "", BinFile := "", UseMPRESS := "",UseCompression := "", UseInclude := "", UseIncludeResource := "", UsePassword := "AutoHotkey")
 {
-	global ExeFileTmp
+	global ExeFileTmp, GuiStatusBar
 	AhkFile := Util_GetFullPath(AhkFile)
 	if (AhkFile = "")
 		Util_Error("Error: Source file not specified.")
-	SplitPath,% AhkFile,, AhkFile_Dir,, AhkFile_NameNoExt
+	SplitPath AhkFile,, AhkFile_Dir,, AhkFile_NameNoExt
 	
 	if (ExeFile = "")
 		ExeFile := AhkFile_Dir "\" AhkFile_NameNoExt ".exe"
@@ -20,7 +20,7 @@ AhkCompile(ByRef AhkFile, ExeFile := "", ByRef CustomIcon := "", BinFile := "", 
 	if (BinFile = "")
 		BinFile := A_ScriptDir "\AutoHotkeySC.bin"
 	SetCursor(LoadCursor(0, 32514)) ; Util_DisplayHourglass()
-	FileCopy, %BinFile%, %ExeFile%, 1
+	FileCopy BinFile, ExeFile, 1
 	if ErrorLevel
 		Util_Error("Error: Unable to copy AutoHotkeySC binary file to destination.")
 	
@@ -28,19 +28,22 @@ AhkCompile(ByRef AhkFile, ExeFile := "", ByRef CustomIcon := "", BinFile := "", 
 	
 	if FileExist(A_ScriptDir "\mpress.exe") && UseMPRESS
 	{
-		If !CLIMode,	SB_SetText("Compressing final executable...")
+		If !CLIMode
+      GuiStatusBar.SetText("Compressing final executable...")
 		if UseCompression ; do not compress resources
-			RunWait, "%A_ScriptDir%\mpress.exe" -q -x -r "%ExeFile%",, Hide
-		else RunWait, "%A_ScriptDir%\mpress.exe" -q -x "%ExeFile%",, Hide
+			RunWait "`"" A_ScriptDir "\mpress.exe`" -q -x -r `"" ExeFile "`"",, "Hide"
+		else RunWait "`"" A_ScriptDir "\mpress.exe`" -q -x `"" ExeFile "`"",, "Hide"
 	}
 	
 	SetCursor(LoadCursor(0, 32512)) ; Util_HideHourglass()
-	If !CLIMode,	SB_SetText("")
+	If !CLIMode
+      GuiStatusBar.SetText("")
 }
 
 BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePassword := "")
 {
-	SplitPath,% AhkFile,, ScriptDir
+  global GuiStatusBar
+	SplitPath AhkFile,, ScriptDir
 	
 	ExtraFiles := []
 	,Directives := PreprocessScript(ScriptBody, AhkFile, ExtraFiles)
@@ -49,7 +52,7 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 	,StrPut(ScriptBody, &BinScriptBody, "UTF-8")
 	If UseCompression {
 		VarSetCapacity(buf,bufsz:=65536,00),totalsz:=0,VarSetCapacity(buf1,65536)
-		Loop, Parse,%ScriptBody%,`n,`r
+		Loop Parse,ScriptBody,"`n","`r"
 		{
 			If (A_LoopField=""){
 				NumPut(10,(&buf) + totalsz, "Char")
@@ -87,25 +90,27 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 		f := ""
 	}
 	
-	If !CLIMode,	SB_SetText("Adding: Master Script")
+	If !CLIMode
+      GuiStatusBar.SetText("Adding: Master Script")
 	if !UpdateResource(module, 10, "E4847ED08866458F8DD35F94B37001C0", 0x409, &BinScriptBody, BinScriptBody_Len)
 		goto _FailEnd
 		
 	for each,file in ExtraFiles
 	{
-		If !CLIMode,	SB_SetText("Adding: " file)
-		StrUpper, resname, %file%
+		If !CLIMode
+        GuiStatusBar.SetText("Adding: " file)
+		resname:=StrUpper(file)
 		
 		If !FileExist(file)
 			goto _FailEnd2
 		If UseCompression{
-			FileRead, tempdata, *c %file%
-			FileGetSize, tempsize, %file%
+			tempdata:=FileRead(file,"RAW")
+			tempsize:=FileGetSize(file)
 			If !filesize := ZipRawMemory(&tempdata, tempsize, filedata)
 				Util_Error("Error: Could not compress the file to: " file)
 		} else {
-			FileRead, filedata, *c %file%
-			FileGetSize, filesize, %file%
+			filedata:=FileRead(file,"RAW")
+			filesize:=FileGetSize(file)
 		}
 		
 		if !UpdateResource(module, 10, resname, 0x409, &filedata, filesize)
@@ -117,15 +122,17 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 	
 	if dirState.ConsoleApp
 	{
-		If !CLIMode,	SB_SetText("Marking executable as a console application...")
+		If !CLIMode
+        GuiStatusBar.SetText("Marking executable as a console application...")
 		if !SetExeSubsystem(ExeFile, 3)
 			Util_Error("Could not change executable subsystem!")
 	}
 	
 	for each,cmd in dirState.PostExec
 	{
-		If !CLIMode,	SB_SetText("PostExec: " cmd)
-		RunWait, % cmd,, UseErrorLevel
+		If !CLIMode
+        GuiStatusBar.SetText("PostExec: " cmd)
+		RunWait cmd,, "UseErrorLevel"
 		if (ErrorLevel != 0)
 			Util_Error("Command failed with RC=" ErrorLevel ":`n" cmd)
 	}
@@ -152,11 +159,11 @@ class CTempWD
 	__New(newWD)
 	{
 		this.oldWD := A_WorkingDir
-		SetWorkingDir % newWD
+		SetWorkingDir newWD
 	}
 	__Delete()
 	{
-		SetWorkingDir % this.oldWD
+		SetWorkingDir this.oldWD
 	}
 }
 

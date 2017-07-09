@@ -5,11 +5,10 @@
 ; Based on code from SciTEDebug.ahk
 AHKType(exeName)
 {
-	FileGetVersion, vert, %exeName%
-	if !vert
+	if !vert:=FileGetVersion(exeName)
 		return "FAIL"
 	
-	StrSplit, vert, %vert%, .
+	vert := StrSplit(vert, ".")
 	vert := vert.4 | (vert.3 << 8) | (vert.2 << 16) | (vert.1 << 24)
 	
 	if (0x014C != exeMachine := GetExeMachine(exeName)) && (exeMachine != 0x8664)

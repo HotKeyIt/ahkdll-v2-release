@@ -2,23 +2,18 @@
 
 ProcessDirectives(ExeFile, module, cmds, IcoFile, UseCompression, UsePassword)
 {
+  global GuiStatusBar
 	state := { ExeFile: ExeFile, module: module, resLang: 0x409, verInfo: {}, IcoFile: IcoFile, PostExec: [] }
 	for _,cmdline in cmds
 	{
-		If !CLIMode,	SB_SetText("Processing directive: " cmdline)
+		If !CLIMode
+      GuiStatusBar.SetText("Processing directive: " cmdline)
 		if !RegExMatch(cmdline, "^(\w+)(?:\s+(.+))?$", o)
 			Util_Error("Error: Invalid directive:`n`n" cmdline)
 		_args := [], nargs := 0
-		StrReplace, o2, % o.2, ```,, `n
-		LoopParse, %o2%, `,, %A_Space%%A_Tab%
-		{
-			StrReplace, ov, %A_LoopField%, `n, `,
-			StrReplace, ov, %ov%, ``n, `n
-			StrReplace, ov, %ov%, ``r, `r
-			StrReplace, ov, %ov%, ``t, `t
-			StrReplace, ov, %ov%, ````, ``
-			_args.Push(ov), nargs++
-		}
+		o2:=StrReplace(o.2, "```,", "`n")
+		Loop Parse, o2, "`,", A_Space A_Tab
+			_args.Push(StrReplace(StrReplace(StrReplace(StrReplace(StrReplace(A_LoopField, "`n", "`,"), "``n", "`n"), "``r", "`r"), "``t", "`t"), "````", "``")), nargs++
 		fn := Func("Directive_" o.1)
 		if !fn
 			Util_Error("Error: Invalid directive: " o.1)
@@ -33,7 +28,8 @@ ProcessDirectives(ExeFile, module, cmds, IcoFile, UseCompression, UsePassword)
 	
 	if !Util_ObjIsEmpty(state.verInfo)
 	{
-		If !CLIMode,	SB_SetText("Changing version information...")
+		If !CLIMode
+      GuiStatusBar.SetText("Changing version information...")
 		ChangeVersionInfo(ExeFile, module, state.verInfo)
 	}
 	
@@ -42,7 +38,8 @@ ProcessDirectives(ExeFile, module, cmds, IcoFile, UseCompression, UsePassword)
 		if !FileExist(IcoFile)
 			Util_Error("Error changing icon: File does not exist.")
 		
-		If !CLIMode,	SB_SetText("Changing the main icon...")
+		If !CLIMode
+      GuiStatusBar.SetText("Changing the main icon...")
 		if !ReplaceAhkIcon(module, IcoFile, ExeFile)
 			Util_Error("Error changing icon: Unable to read icon or icon was of the wrong format.")
 	}
@@ -118,10 +115,10 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 		resType := o.1, rsrc := o.2
 	if !resFile := Util_GetFullPath(rsrc)
 		Util_Error("Error: specified resource does not exist: " rsrc)
-	SplitPath, %resFile%, resFileName,, resExt
+	SplitPath resFile, resFileName,, resExt
 	if !resName
 		resName := resFileName, defResName := true
-	StrUpper, resName, %resName%
+	resName:=StrUpper(resName)
 	if (resType = "")
 	{
 		; Auto-detect resource type
@@ -150,13 +147,13 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 		if between(resName,0,0xFFFF)
 			nameType := "uint"
 	If UseCompression && resType=10{
-		FileRead, tempdata, *c %resFile%
-		FileGetSize, tempsize, %resFile%
+		tempdata:=FileRead(resFile,"RAW")
+		tempsize:=FileGetSize(resFile)
 		If !fSize := ZipRawMemory(&tempdata, tempsize, fData)
 			Util_Error("Error: Could not compress the file to: " file)
 	} else {
-		FileGetSize, fSize, %resFile%
-		FileRead, fData, *c %resFile%
+		fSize:=FileGetSize(resFile)
+		fData:=FileRead(resFile,"RAW")
 	}
 	pData := &fData
 	if resType = 2
@@ -187,7 +184,7 @@ ChangeVersionInfo(ExeFile, hUpdate, verInfo)
 	for k,v in verInfo
 	{
 		if IsLabel(lbl := "_VerInfo_" k)
-			gosub %lbl%
+			gosub(lbl)
 		continue
 		_VerInfo_Name:
 		SafeGetViChild(props, "ProductName").SetText(v)
