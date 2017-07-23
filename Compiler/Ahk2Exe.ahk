@@ -126,6 +126,7 @@ GuiClose(){
 }
 
 GuiDropFiles(){
+  global
   if A_EventInfo > 2
     Util_Error("You cannot drop more than one file into this window!")
   SplitPath A_GuiEvent,,, dropExt
@@ -322,6 +323,7 @@ BrowseExe(Control){
 }
 
 BrowseIco(Control){
+  global
   ov:=FileSelect(1, LastIconDir, "Open", "Icon files (*.ico)")
   if ErrorLevel
     return
