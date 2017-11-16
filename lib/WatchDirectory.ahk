@@ -50,7 +50,7 @@ DirSelect,dir,,3,Select directory to watch for
 If !dir
    Return
 SetTimer,SetMsgBoxButtons,-10
-MsgBox, 262146,Add directory,Would you like to watch for changes in:`n%dir%
+MsgBox, Would you like to watch for changes in:`n%dir%,Add directory,262146,A_MsgBoxResult
 
 Gui,ListView, WatchingDirectoriesList
 If (A_MsgBoxResult="Retry")
@@ -126,8 +126,8 @@ WatchDirectory(p*){
       If (max=2 && ReportToFunction=""){
         for i,folder in _
           If (dir1=SubStr(folder,1,-1))
-            Return (DirEvents[i]:=DirEvents[_.Length()],DirEvents[_.Length()]:=0
-                   ,__.Delete(folder),_[i]:=_[_.Length()],_.Delete(i))
+            Return (DirEvents[i]:=DirEvents[_.Length()],DirEvents[_.Length()]:=0,0)
+                   __.Delete(folder),_[i]:=_[_.Length()],_.Delete(i)
         Return 0
       }
     }
@@ -150,9 +150,9 @@ WatchDirectory(p*){
     __[LP].sD:=(dir2=""?0:1)
 
     Loop Parse, StringToRegEx,"|"
-      dir3:=StrReplace(dir3,SubStr(A_LoopField,1,1),SubStr(A_LoopField,2))
+      dir3:=StrReplace(dir3,SubStr(A_LoopField,1,1), SubStr(A_LoopField,2))
     dir3:=StrReplace(dir3,A_Space,"\s")
-    Loop Parse, dir3,"|"
+    Loop Parse,dir3,"|"
     {
       If A_Index=1
         dir3:=""
@@ -178,9 +178,10 @@ WatchDirectory(p*){
            ,"Int",__[LP].sD,"UInt",__[LP].CNG,"UInt",0,"UInt",__[LP].O[""],"UInt",0)
     Return timer:=DllCall("SetTimer","Uint",0,"UInt",timer,"Uint",50,"UInt",WatchDirectory)
   } else {
-    Sleep 0
-	If !DirEvents
-		return
+    Sleep -1
+  	If !DirEvents
+  		return
+    DllCall("KillTimer", UInt,0, UInt,timer)
     for LP in reconnect
     {
       If (FileExist(__[LP].dir) && reconnect.Delete(LP)){
@@ -195,9 +196,8 @@ WatchDirectory(p*){
     if !( (r:=DllCall("MsgWaitForMultipleObjectsEx","UInt",_.Length()
              ,"UInt",DirEvents[""],"UInt",0,"UInt",0x4FF,"UInt",6))>=0
              && r<_.Length() ){
-      return
+      return timer:=DllCall("SetTimer","Uint",0,"UInt",timer,"Uint",50,"UInt",WatchDirectory)
     }
-    DllCall("KillTimer", UInt,0, UInt,timer)
     LP:=_[r+1],DllCall("GetOverlappedResult","UInt",__[LP].hD,"UInt",__[LP].O[""],"UIntP",nReadLen,"Int",1)
     If (A_LastError=64){ ; ERROR_NETNAME_DELETED - The specified network name is no longer available.
       If !FileExist(__[LP].dir) ; If folder does not exist add to reconnect routine

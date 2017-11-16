@@ -1,19 +1,20 @@
-﻿Yaml(YamlText,IsFile:=1,YamlObj:=0){ ; Version 1.0.0.16 http://www.autohotkey.com/forum/viewtopic.php?t=70559
+﻿Yaml(YamlText,IsFile:=1,YamlObj:=0){ ; Version 1.0.0.19 http://www.autohotkey.com/forum/viewtopic.php?t=70559
   static
-  static BackupVars:="LVL,SEQ,KEY,SCA,TYP,VAL,CMT,LFL,CNT",IncompleteSeqMap
+  static base:={Dump:"Yaml_Dump",Save:"Yaml_Save",Add:"Yaml_Add",Merge:"Yaml_Merge"}
+  static BackupVars:="LVL,SEQ,KEY,SCA,TYP,VAL,CMT,LFL,CNT",IncompleteSeqMap:="",_CNT:="",__SCA0:="",__SCA:="",__SEQ:="",__SEQ0:="",__KEY:="",__KEY0:="",__TYP0:="",__VAL0:="",_CMT:="",__CMT0:="",__CNT0:="",__LFL0:=""
   local maxLVL:=0,LastContObj:=0,LastContKEY:=0,LinesAdded:=0,_LVLChanged:=0
   LVL0:=pYaml:=YamlObj?YamlObj:Object("base",base),__LVL:=0,__LVL0:=0
   If IsFile
     YamlText:=FileRead(YamlText)
-  Loop Parse, YamlText, "`n", "`r"
+  Loop Parse,YamlText,"`n","`r"
   {
     If !_CNT&&(A_LoopField=""||RegExMatch(A_LoopField,"^\s+$")){ ;&&__KEY=""&&__SEQ="")){
-			If ((OBJ:=LVL%__LVL%[""])&&ObjLength(obj))&&IsObject(LVL%__LVL%["",OBJ])&&__SEQ{
+			If ((OBJ:=LVL%__LVL%[""])&&OBJ:=ObjLength(obj))&&IsObject(LVL%__LVL%["",OBJ])&&__SEQ{
 				If __KEY!=""
 					Yaml_Continue(LastContObj:=LVL%__LVL%["",Obj],LastContKEY:=__key,"",__SCA)
 				else Yaml_Continue(LastContObj:=LVL%__LVL%[""],LastContKEY:=Obj,"",__SCA,__SEQ)
 			} else If __SEQ&&OBJ{
-				Yaml_Continue(LastContObj:=LVL%__LVL%[""],LastContKEY:=Obj,"",__SCA,__SEQ)
+				Yaml_Continue(LastContObj:=LVL%__LVL%[""],LastContKEY:=OBJ,"",__SCA,__SEQ)
 			} else If OBJ{
 				Yaml_Continue(LastContObj:=LVL%__LVL%[""],LastContKEY:=OBJ,"",__SCA,1)
 			} else if __KEY!=""
@@ -46,11 +47,11 @@
 			}
     }
     If LoopField="---"{
-      Loop (maxLVL)
+      Loop maxLVL
         LVL%A_Index%:=""
-      Loop Parse, BackupVars, "`,"
+      Loop Parse,BackupVars,"`,"
         __%A_LoopField%:="",__%A_LoopField%0:=""
-      Loop Parse, BackupVars, "`,"
+      Loop Parse, BackupVars,"`,"
         Loop maxLVL
         __%A_LoopField%%A_Index%:=""
       maxLVL:=0
@@ -65,7 +66,7 @@
         LVL%A_Index%:=""
       Loop Parse, BackupVars,"`,"
         __%A_LoopField%:="",__%A_LoopField%0:=""
-      Loop Parse, BackupVars,"`,"
+      Loop Parse,BackupVars,"`,"
         Loop maxLVL
         __%A_LoopField%%A_Index%:=""
       maxLVL:=0
@@ -108,7 +109,7 @@
     _NXT:=_LVL+1 ;next indentation level
     __NXT:=_NXT+1
     _PRV:=_LVL=0?0:_LVL-1
-    Loop Parse, BackupVars, "`,"
+    Loop Parse, BackupVars,"`,"
       __%A_LoopField%:=__%A_LoopField%%_PRV%
     If RegExMatch(_LFL,"^-\s*$"){
       _SEQ:="-",_KEY:="",_VAL:=""
@@ -118,14 +119,14 @@
       continue
     }
     If _LVL<__LVL{ ;Reset Objects and Backup vars
-      Loop (maxLVL)
+      Loop maxLVL
         If A_Index>_LVL{
           Loop Parse, BackupVars,"`,"
             __%A_LoopField%%maxLVL%:=""
           LVL%A_Index%:="",maxLVL:=maxLVL-1
         }
       If _LVL=0&&!__LVL:=__LVL0:=0
-        Loop Parse, BackupVars, "`,"
+        Loop Parse, BackupVars,"`,"
           __%A_LoopField%:="",__%A_LoopField%0:=""
     }
     If _SEQ&&_LVL>__LVL&&(__VAL!=""||__SCA)
@@ -167,7 +168,7 @@
         LVL%_LVL%[""]:=Object("base",base)
       While (SubStr(_LFL,1,2)="- "){
         _LFL:=SubStr(_LFL,3),_KEY:=(_KEY!="")?_LFL:=SubStr(_KEY,3):_KEY,ObjPush(LVL%_LVL%[""],LVL%_NXT%:=Object("",Object("base",base),"base",base)),_LVL:=_LVL+1,_NXT:=_NXT+1,__NXT:=_NXT+1,_PRV:=_LVL-1,maxLVL:=(maxLVL<_LVL)?_LVL:maxLVL
-        Loop Parse, BackupVars, "`,"
+        Loop Parse, BackupVars,"`,"
           __%A_LoopField%:=_%A_LoopField%
           ,__%A_LoopField%%_PRV%:=_%A_LoopField%
       }
@@ -231,20 +232,20 @@
   If LastContObj&&!__SCA
       LastContObj[LastContKEY]:=SubStr(LastContObj[LastContKEY],1,-1*LinesAdded)
   pYaml.base:=base
-  Loop Parse, BackupVars, "`,"
+  Loop Parse, BackupVars,"`,"
       If !(__%A_LoopField%:="")
         Loop maxLVL
           __%A_LoopField%%A_Index%:=""
   Return pYaml
 }
 Yaml_Save(obj,file,level:=""){
-  FileMove file,file ".bakupyml",1
+  FileMove file, file ".bakupyml",1
   FileAppend Yaml_Dump(obj), file
   If !ErrorLevel
     FileDelete file ".bakupyml"
   else {
     FileMove file ".bakupyml", file
-    MsgBox("Error creating file, old file was restored.")
+    MsgBox("old file was restored.","Error creating file",0)
   }
 }
 Yaml_Merge(obj,merge){
@@ -346,7 +347,8 @@ Yaml_Dump(O,J:="",R:=0,Q:=0){
 }
 Yaml_UniChar(string){
   static a:="`a",b:="`b",t:="`t",n:="`n",v:="`v",f:="`f",r:="`r",e:=Chr(0x1B)
-  Loop Parse, string, "\"
+  var:="",lastempty:=0
+  Loop Parse, string,"\"
   {
     If A_Index=1{
       var.=A_LoopField
@@ -386,6 +388,7 @@ Yaml_UniChar(string){
 }
 Yaml_CharUni(string){
   static ascii:={"\":"\","`a": "a","`b": "b","`t": "t","`n": "n","`v": "v","`f": "f","`r": "r",Chr(0x1B): "e","`"": "`"",Chr(0x85): "N",Chr(0x2029): "P",Chr(0x2028): "L","": "0",Chr(0xA0): "_"}
+  var:=""
   If !RegexMatch(string,"[\x{007F}-\x{FFFF}]"){
     Loop Parse, string
     {
@@ -433,18 +436,19 @@ Yaml_S2I(str){
   Return idx
 }
 Yaml_I2S(idx){
+  str:=""
   Loop idx
     str .= "  "
   Return str
 }
 Yaml_Continue(Obj,key,value,scalar:="",isval:=0){
   If !IsObject(isObj:=obj[key])
-    v:=IsObject(isObj)?"":isObj
+    v:=isObj
   If scalar{
     scaopt:=SubStr(scalar,2)
     scalar:=Ord(scalar)=124?"`n":" "
   } else scalar:=" ",scaopt:="-"
-  temp := (value=""?"`n":(SubStr(v,0)="`n"&&scalar="`n"?"":(v=""?"":scalar))) value (scaopt!="-"?(v&&value=""?"`n":""):"")
+  temp := (value=""?"`n":(SubStr(v,-1)="`n"&&scalar="`n"?"":(v=""?"":scalar))) value (scaopt!="-"?(v&&value=""?"`n":""):"")
   obj[key]:=Yaml_UnQuoteIfNeed(v temp)
 }
 Yaml_Quote(ByRef L,F,Q,B,ByRef E){
@@ -550,7 +554,6 @@ Yaml_Map(obj,key,value,isVal:=0){
   Count:=StrLen(value)
   Loop Parse, value
   {
-
     If ((Quote="`""&&Yaml_Quote(LF,A_LoopField,Quote,Bracket,Escape))||(ContinueNext&&!ContinueNext:=0))
       Continue
     If Quote{

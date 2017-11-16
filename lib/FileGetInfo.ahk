@@ -1,4 +1,4 @@
-﻿;MsgBox FileGetInfo(A_AhkPath,"FileDescription")
+﻿;~ MsgBox FileGetInfo(A_AhkPath,"FILEVERSION")
 FileGetInfo( peFile:="", p*) {   ; Written by SKAN, modified by HotKeyIt
  ; www.autohotkey.com/forum/viewtopic.php?p=233188#233188  CD:24-Nov-2008 / LM:27-Oct-2010
  static DLL:="Version\GetFileVersion"

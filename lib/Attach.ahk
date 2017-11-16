@@ -103,7 +103,7 @@ Attach_(hCtrl, aDef, Msg, hParent){
   static
   static Handler:="",adrWindowInfo:="",adrSetWindowPos:=""
   local s1,s2, enable:=0, reset:=0, oldCritical
-  
+  ListLines "Off"
   if (aDef = "") {							;Reset if integer, Handler if string
     if IsFunc(hCtrl)
       return Handler := hCtrl
@@ -114,7 +114,7 @@ Attach_(hCtrl, aDef, Msg, hParent){
     loop parse, _%hParent%a, A_Space
     {
       hCtrl := A_LoopField, SubStr(_%hCtrl%,1,1), aDef := SubStr(_%hCtrl%,1,1)="-" ? SubStr(_%hCtrl%,2) : _%hCtrl%,  _%hCtrl% := ""
-    _%hCtrl%:=""
+      _%hCtrl%:=""
       gosub Attach_GetPos
       loop parse, aDef, A_Space
       {
@@ -149,6 +149,8 @@ Attach_(hCtrl, aDef, Msg, hParent){
       else _%hCtrl% := SubStr(_%hCtrl%, 2), enable := 1 
     else {
       gosub Attach_GetPos
+	  if hCtrl<0
+		return
       _%hCtrl% := ""
       loop parse, aDef, A_Space
       {			
@@ -161,7 +163,7 @@ Attach_(hCtrl, aDef, Msg, hParent){
           k := SubStr(l, 2, j-2) / SubStr(l, j+1)
         _%hCtrl% .= f ":" k ":" c%f% " "
       }
-      return (_%hCtrl% := SubStr(_%hCtrl%, 1, -1), _%hParent%a .= InStr(_%hParent%, hCtrl) ? "" : (_%hParent%a = "" ? "" : " ")  hCtrl )
+      return (_%hCtrl% := SubStr(_%hCtrl%, 1, -1), _%hParent%a .= InStr(_%hParent%, hCtrl) ? "" : (_%hParent%a = "" ? "" : " ")  hCtrl)
     }
   }
   if _%hParent%a=""
@@ -180,7 +182,7 @@ Attach_(hCtrl, aDef, Msg, hParent){
   critical 5000
 
   s:=StrSplit(_%hParent%_s, A_Space)
-  loop parse,_%hParent%a, A_Space
+  loop parse, _%hParent%a, A_Space
   {
     hCtrl := A_LoopField, aDef := _%hCtrl%, 	uw := uh := ux := uy := r := 0, hCtrl1 := SubStr(_%hCtrl%,1,1)
     if (hCtrl1 = "-")
@@ -204,7 +206,7 @@ Attach_(hCtrl, aDef, Msg, hParent){
     DllCall(adrSetWindowPos, "ptr", hCtrl, "ptr", 0, "uint", cx, "uint", cy, "uint", cw, "uint", ch, "uint", flag)
     r+0=2 ? Attach_redrawDelayed(hCtrl) : ""
   }
-  critical %oldCritical%
+  critical oldCritical
   return Handler != "" ? %Handler%(hParent) : ""
 
  Attach_GetPos:									;hParent & hCtrl must be set up at this point

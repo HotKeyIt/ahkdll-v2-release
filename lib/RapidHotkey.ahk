@@ -7,33 +7,33 @@ RapidHotkey(keystroke, times:="2", delay:=0.2, IsLabel:=0)
 		Return
 	If (times = "" && InStr(keystroke, "`""))
 	{
-		Loop Parse, keystroke, "`""
+		Loop Parse, keystroke,"`"	"
 			If (StrLen(Pattern) = A_Index+1)
-				_continue := A_Index, times := StrLen(Pattern)
+				proceed := A_Index, times := StrLen(Pattern)
 	}
 	Else if (RegExMatch(times, "^\d+$") && InStr(keystroke, "`""))
 	{
 		Loop Parse, keystroke,"`""
 			If (StrLen(Pattern) = A_Index+times-1)
-				times := StrLen(Pattern), _continue := A_Index
+				times := StrLen(Pattern), proceed := A_Index
 	}
 	Else if InStr(times, "`"")
 	{
-		Loop Parse, times, "`""
+		Loop Parse, times,"`""
 			If (StrLen(Pattern) = A_LoopField)
-				_continue := A_Index, times := A_LoopField
+				proceed := A_Index, times := A_LoopField
 	}
 	Else if (times = "")
-		_continue := 1, times := 2
+		proceed := 1, times := 2
 	Else if (times = StrLen(Pattern))
-		_continue := 1
-	If !_continue
+		proceed := 1
+	If !proceed
 		Return
 	Loop Parse, keystroke,"`""
-		If (_continue = A_Index)
+		If (proceed = A_Index)
 			keystr := A_LoopField
-	Loop Parse, IsLabel, "`""
-		If (_continue = A_Index)
+	Loop Parse, IsLabel,"`""
+		If (proceed = A_Index)
 			IsLabel := A_LoopField
 	If InStr(hotkey, A_Space)
 		hotkey:=SubStr(hotkey,InStr(hotkey,A_Space,1,0)+1)
@@ -42,8 +42,8 @@ RapidHotkey(keystroke, times:="2", delay:=0.2, IsLabel:=0)
 	Loop Parse, "Ctrl|Alt|Shift|LWin|RWin", "|"
 		KeyWait A_LoopField
   KeyWait hotkey
-  If (thishotkey!=A_ThisHotkey)
-	Return
+  If thishotkey!=A_ThisHotkey
+		Return
 	If ((!IsLabel or (IsLabel && IsLabel(keystr))) && InStr(A_ThisHotkey, "~") && !RegExMatch(A_ThisHotkey
 	, "i)\^[^\!\d]|![^\d]|#|Control|Ctrl|LCtrl|RCtrl|Shift|RShift|LShift|RWin|LWin|Alt|LAlt|RAlt|Escape|BackSpace|F\d\d?|"
 	. "Insert|Esc|Escape|BS|Delete|Home|End|PgDn|PgUp|Up|Down|Left|Right|ScrollLock|CapsLock|NumLock|AppsKey|"
@@ -52,7 +52,7 @@ RapidHotkey(keystroke, times:="2", delay:=0.2, IsLabel:=0)
 	. "Media_Next|Media_Prev|Media_Stop|Media_Play_Pause|Launch_Mail|Launch_Media|Launch_App1|Launch_App2|Joy"))
 		Send backspace
 	If (WinExist("AHK_class #32768") && hotkey = "RButton")
-		WinClose "AHK_class #32768"
+		WinClose("ahk_class #32768")
 	If IsLabel=0
 		Send keystr
 	if IsLabel(keystr)
@@ -73,7 +73,7 @@ Morse(timeout := 400) { ;by Laszo -> http://www.autohotkey.com/forum/viewtopic.p
 		If(ErrorLevel)
 			Return Pattern
     If InStr(",Capslock,LButton,RButton,MButton,","," key ",") || 1=InStr(key,"Joy")
-      KeyWait key,"T" tout "D"
+      KeyWait key,"D T" tout
     else
       pressed:=Input("T" tout " L1 V","{" key "}" key1)
 		If (ErrorLevel="Timeout" or ErrorLevel=1)
