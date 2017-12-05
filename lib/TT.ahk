@@ -45,7 +45,7 @@ TT_Init(){ ;initialize structures function
   ,_ICONINFO:="fIcon,xHotspot,yHotSpot,HBITMAP hbmMask,HBITMAP hbmColor"
   ,_BITMAP:="LONG bmType,LONG bmWidth,LONG bmHeight,LONG bmWidthBytes,WORD bmPlanes,WORD bmBitsPixel,LPVOID bmBits"
   ,_SHFILEINFO:="HICON hIcon,iIcon,DWORD dwAttributes,TCHAR szDisplayName[260],TCHAR szTypeName[80]"
-  ,_TBBUTTON:="iBitmap,idCommand,BYTE fsState,BYTE fsStyle,BYTE bReserved[" (A_PtrSize=8?6:2) "],DWORD_PTR dwData,INT_PTR iString"
+  ,_TBBUTTON:="iBitmap,idCommand,BYTE fsState,BYTE fsStyle,BYTE bReserved[" (A_Is64bitOS?6:2) "],DWORD_PTR dwData,INT_PTR iString"
   static _:={base:{__Delete:"TT_Delete"}}
   return _
 }
@@ -357,23 +357,23 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
   If (x="TrayIcon" || y="TrayIcon"){
     DetectHiddenWindows (DetectHiddenWindows:=A_DetectHiddenWindows ? "On" : "On")
 		; WinGetPid,PID,ahk_id %A_ScriptHwnd%
-		PID:=DllCall("GetCurrentProcessId")
-    hWndTray:=WinExist("ahk_class Shell_TrayWnd")
-    for k,ToolbarWindow in WinGetControls("ahk_class Shell_TrayWnd")
+    PID:=DllCall("GetCurrentProcessId")
+    hWndTray:=DllCall("FindWindow","Str","Shell_TrayWnd", "PTR", 0)
+    for k,ToolbarWindow in WinGetControls("ahk_id " hWndTray)
       if InStr(ToolbarWindow,"ToolbarWindow32")
-        && ("SysPager"=WinGetClass("ahk_id " DllCall( "GetParent", "Ptr", hWnd:=ControlGetHwnd(ToolbarWindow, "ahk_class Shell_TrayWnd") ))){
+        && ("SysPager"=WinGetClass("ahk_id " DllCall( "GetParent", "Ptr", hWnd:=ControlGetHwnd(ToolbarWindow, "ahk_id " hWndTray) ))){
         hWndToolBar:=ControlGetHwnd(ToolbarWindow32:=ToolbarWindow,"ahk_id " hWndTray)
         Break
       }
     procpid:=WinGetPid("ahk_id " hWndToolBar)
-    DataH   := DllCall( "OpenProcess", "uint", 0x38, "int", 0, "uint", procpid,"PTR") ;0x38 = PROCESS_VM_OPERATION+READ+WRITE
-    ,bufAdr  := DllCall( "VirtualAllocEx", "PTR", DataH, "PTR", 0, "uint", sizeof(_TBBUTTON), "uint", MEM_COMMIT:=0x1000, "uint", PAGE_READWRITE:=0x4,"PTR")
+    hProc   := DllCall( "OpenProcess", "uint", 0x38, "int", 0, "uint", procpid,"PTR") ;0x38 = PROCESS_VM_OPERATION+READ+WRITE
+    ,bufAdr  := DllCall( "VirtualAllocEx", "PTR", hProc, "PTR", 0, "uint", sizeof(TB), "uint", MEM_COMMIT:=0x1000, "uint", PAGE_READWRITE:=0x4,"PTR")
 	Loop max:=DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x418,"PTR",0,"PTR",0,"PTR")
     {
       i:=max-A_Index
       DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x417,"PTR",i,"PTR",bufAdr,"PTR")
-      ,DllCall("ReadProcessMemory", "PTR", DataH, "PTR", bufAdr, "PTR", TB[], "ptr", sizeof(TB), "ptr", 0)
-      ,DllCall("ReadProcessMemory", "PTR", DataH, "PTR", TB.dwData, "PTR", RC[], "PTR", 8, "PTR", 0)
+      ,DllCall("ReadProcessMemory", "PTR", hProc, "PTR", bufAdr, "PTR", TB[], "ptr", sizeof(TB), "ptr", 0)
+      ,DllCall("ReadProcessMemory", "PTR", hProc, "PTR", TB.dwData, "PTR", RC[], "PTR", 8, "PTR", 0)
 	  BWPID:=WinGetPID("ahk_id " NumGet(RC[],0,"PTR"))
 	  If (BWPID!=PID)
         continue
@@ -383,7 +383,7 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
       } else {
         ControlGetPos xc,yc,,,ToolbarWindow32,"ahk_id " hWndTray
         DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x41d,"PTR",i,"PTR",bufAdr,"PTR")
-        ,DllCall( "ReadProcessMemory", "PTR", DataH, "PTR", bufAdr, "PTR", RC[], "PTR", sizeof(RC), "PTR", 0 )
+        ,DllCall( "ReadProcessMemory", "PTR", hProc, "PTR", bufAdr, "PTR", RC[], "PTR", sizeof(RC), "PTR", 0 )
         ,halfsize:=(RC.bottom-RC.top)/2
         ,xc+=RC.left + halfsize
         ,yc+=RC.top + (halfsize/1.5)
@@ -402,8 +402,8 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
       WinGetPos xw,yw,,,"ahk_id " hWndTray
       xc+=xw,yc+=yw
     }
-    DllCall( "VirtualFreeEx", "PTR", DataH, "PTR", bufAdr, "PTR", 0, "uint", MEM_RELEASE:=0x8000)
-    ,DllCall( "CloseHandle", "PTR", DataH )
+    DllCall( "VirtualFreeEx", "PTR", hProc, "PTR", bufAdr, "PTR", 0, "uint", MEM_RELEASE:=0x8000)
+    ,DllCall( "CloseHandle", "PTR", hProc )
     DetectHiddenWindows DetectHiddenWindows
     If (x="TrayIcon")
       x:=xc
