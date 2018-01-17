@@ -18,7 +18,7 @@
 #Include %A_ScriptDir%
 #Include Compiler.ahk
 SendMode Input
-Menu "Tray","Icon",A_AhkPath,2
+TraySetIcon(A_AhkPath,2)
 
 global DEBUG := !A_IsCompiled
 
@@ -36,21 +36,21 @@ IcoFile := LastIcon
 BinFileId := FindBinFile(LastBinFile)
 
 #include *i __debug.ahk
-
-Menu "FileMenu", "Add", "&Convert", "Convert"
-Menu "FileMenu", "Add"
-Menu "FileMenu", "Add", "E&xit`tAlt+F4", "GuiClose"
-Menu "HelpMenu", "Add", "&Help", "Help"
-Menu "HelpMenu", "Add"
-Menu "HelpMenu", "Add", "&About", "About"
-Menu "MenuBar", "Add", "&File", ":FileMenu"
-Menu "MenuBar", "Add", "&Help", ":HelpMenu"
+FileMenu:=MenuCreate(),HelpMenu:=MenuCreate(),MenuBar:=MenuCreate()
+FileMenu.Add("&Convert", "Convert")
+FileMenu.Add()
+FileMenu.Add("E&xit`tAlt+F4", "GuiClose")
+HelpMenu.Add("&Help", "Help")
+HelpMenu.Add()
+HelpMenu.Add("&About", "About")
+MenuBar.Add("&File", FileMenu)
+MenuBar.Add("&Help", HelpMenu)
 
 Gui :=GuiCreate()
 ToolTip:=TT(Gui.Hwnd)
 Gui.OnEvent("Close","GuiClose")
 Gui.OnEvent("DropFiles","GuiDropFiles")
-Gui.Menu := "MenuBar"
+Gui.Menu := MenuBar
 Gui.AddLink "x287 y10","
 (Q
 ©2004-2009 Chris Mallet
@@ -153,7 +153,7 @@ If NumGet(pData,0,"UInt")=0x04034b50
 	sData:=UnZipRawMemory(pData,sData,resLogo),pData:=&resLogo
 hGlob := GlobalAlloc(2, sData) ; 2=GMEM_MOVEABLE
 pGlob := GlobalLock(hGlob)
-#DllImport,memcpy,msvcrt\memcpy,ptr,,ptr,,ptr,,CDecl
+#DllImport memcpy,msvcrt\memcpy,ptr,,ptr,,ptr,,CDecl
 memcpy(pGlob, pData, sData)
 GlobalUnlock(hGlob)
 CreateStreamOnHGlobal(hGlob, 1, getvar(pStream:=0))
@@ -163,7 +163,7 @@ VarSetCapacity(si, 16, 0), NumPut(1, si, "UChar")
 GdiplusStartup(getvar(gdipToken:=0), &si)
 GdipCreateBitmapFromStream(pStream, getvar(pBitmap:=0))
 GdipCreateHBITMAPFromBitmap(pBitmap, getvar(hBitmap:=0))
-SendMessage, 0x172, 0, hBitmap,, "ahk_id " GuiPicCtrl.hwnd ; 0x172=STM_SETIMAGE, 0=IMAGE_BITMAP
+SendMessage 0x172, 0, hBitmap,, "ahk_id " GuiPicCtrl.hwnd ; 0x172=STM_SETIMAGE, 0=IMAGE_BITMAP
 GuiPicCtrl.Move("w240 h78")
 
 GdipDisposeImage(pBitmap)
@@ -252,8 +252,7 @@ Loop p.Length() // 2
 	if (p2 = "")
 		goto BadParams
 	
-	p1:=SubStr(p1,2)
-	gosub _Process%p1%
+	gosub("_Process" SubStr(p1,2))
 }
 
 if !AhkFile
@@ -419,7 +418,7 @@ return
 
 About(){
   MsgBox "
-  (
+  (Q
   Ahk2Exe - Script to EXE Converter
 
   Original version:
@@ -428,8 +427,8 @@ About(){
     Copyright @2008-2011 Steve Gray (Lexikos)
 
   Script rewrite:
-    Copyright @2011-%A_Year% fincs
-    Copyright @2012-%A_Year% HotKeyIt
+    Copyright @2011-" A_Year " fincs
+    Copyright @2012-" A_Year " HotKeyIt
   )", "About Ahk2Exe", 64
 }
 
