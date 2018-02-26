@@ -41,11 +41,11 @@ TT_Init(){ ;initialize structures function
   ,_RECT:="left,top,right,bottom"
   ,_NMHDR:="HWND hwndFrom,UINT_PTR idFrom,UINT code"
   ,_NMTVGETINFOTIP:="_NMHDR hdr,UINT uFlags,UInt link"
-  ,_CURSORINFO:="cbSize,flags,HCURSOR hCursor,x,y"
+  ,_CURSORINFO:="cbSize,flags,HCURSOR hCursor,Int x,y"
   ,_ICONINFO:="fIcon,xHotspot,yHotSpot,HBITMAP hbmMask,HBITMAP hbmColor"
   ,_BITMAP:="LONG bmType,LONG bmWidth,LONG bmHeight,LONG bmWidthBytes,WORD bmPlanes,WORD bmBitsPixel,LPVOID bmBits"
   ,_SHFILEINFO:="HICON hIcon,iIcon,DWORD dwAttributes,TCHAR szDisplayName[260],TCHAR szTypeName[80]"
-  ,_TBBUTTON:="iBitmap,idCommand,BYTE fsState,BYTE fsStyle,BYTE bReserved[" (A_PtrSize=8?6:2) "],DWORD_PTR dwData,INT_PTR iString"
+  ,_TBBUTTON:="iBitmap,idCommand,BYTE fsState,BYTE fsStyle,BYTE bReserved[" (A_Is64bitOS?6:2) "],DWORD_PTR dwData,INT_PTR iString"
   static _:={base:{__Delete:"TT_Delete"}}
   return _
 }
@@ -70,14 +70,14 @@ TT(options:="",text:="",title:=""){
       ,SETTITLE:"TTM_SETTITLE",SETTOOLINFO:"TTM_SETTOOLINFO",SETWINDOWTHEME:"TTM_SETWINDOWTHEME"
       ,TRACKACTIVATE:"TTM_TRACKACTIVATE",TRACKPOSITION:"TTM_TRACKPOSITION",UPDATE:"TTM_UPDATE"
       ,UPDATETIPTEXT:"TTM_UPDATETIPTEXT",WINDOWFROMPOINT:"TTM_WINDOWFROMPOINT"
-      ,"base":{__Call:"TT_Set"}}
+      ,base:{__Call:"TT_Set"}}
   Parent:="",Gui:="",ClickTrough:="",Style:="",NOFADE:="",NoAnimate:="",NOPREFIX:="",AlwaysTip:="",ParseLinks:="",CloseButton:="",Balloon:="",maxwidth:=""
   ,INITIAL:="",AUTOPOP:="",RESHOW:="",OnClick:="",OnClose:="",OnShow:="",ClickHide:="",HWND:="",Center:="",RTL:="",SUB:="",Track:="",Absolute:=""
   ,TRANSPARENT:="",Color:="",Background:="",icon:=0
   if (Type(options+0)="Integer")
     Parent:=options
   else If (options){
-    Loop Parse, options, A_Space, A_Space
+    Loop Parse, options,A_Space,A_Space
       If istext {
         If (SubStr(A_LoopField,-1)="'")
           %istext%:=string A_Space SubStr(A_LoopField,1,StrLen(A_LoopField)-1),istext:="",string:=""
@@ -96,10 +96,12 @@ TT(options:="",text:="",title:=""){
       } else if A_LoopField
         %A_LoopField% := 1
   }
-  if (!Parent && GUI){
-    Parent:=GUI
-  } else if (Parent=""){
-    Parent:=A_ScriptHwnd
+	If (!DllCall("IsWindow","PTR",Parent) && !DllCall("IsWindow","PTR",Parent:=GUI)){
+    ; Gui,%Parent%:+LastFound
+    Parent:=A_ScriptHwnd ;WinExist()
+  ; } else if (GUI){
+    ; Gui, %GUI%:+LastFound
+    ; Parent:=WinExist()
   }
   T:=Object("base",base)
   ,T.HWND := DllCall("CreateWindowEx", "UInt", (ClickTrough?0x20:0)|0x8, "str", "tooltips_class32", "PTR", 0
@@ -125,14 +127,14 @@ TT(options:="",text:="",title:=""){
 	,T.AddTool(P[])
   If (Theme)
     T.SETWINDOWTHEME()
-  If Color
+  If Color!=""
     T.SETTIPTEXTCOLOR(Color)
-  If Background
+  If Background!=""
     T.SETTIPBKCOLOR(BackGround)
   T.SetTitle(T.maintitle:=title,icon)
   If ((T.OnClick:=OnClick)||(T.OnClose:=OnClose)||(T.OnShow:=OnShow))
     T.OnClose:=OnClose,T.OnShow:=OnShow,T.ClickHide:=ClickHide
-  OnMessage(0x4e,A_ScriptHwnd,"TT_OnMessage")
+   OnMessage(0x4e,A_ScriptHwnd,"TT_OnMessage")
   Return T
 }
 
@@ -145,7 +147,6 @@ TT_Delete(this){ ;delete all ToolTips (will be executed OnExit)
 		this[i].DelTool(tool[])
 	  this.Delete(i)
 	}
-	TT_GetIcon() ;delete ToolTips and Destroy all icon handles
 }
 
 TT_Remove(T:=""){
@@ -164,7 +165,7 @@ TT_Remove(T:=""){
 }
 
 TT_OnMessage(wParam,lParam,msg,hwnd){
-  global _NMTVGETINFOTIP,_NMHDR 
+  global _NMTVGETINFOTIP,_NMHDR
   static TTN_FIRST:=0xfffffdf8, _:=TT_Init() ;Get main object that holds all ToolTips
         ,HDR:=Struct(_NMTVGETINFOTIP)
   HDR[]:=lParam
@@ -206,6 +207,10 @@ TT_ADD(T,Control,Text:="",uFlags:="",Parent:=""){
   DetectHiddenWindows:=A_DetectHiddenWindows
   DetectHiddenWindows "On"
   if (Parent){
+    If (!DllCall("IsWindow","PTR",Parent)){
+      ; Gui %Parent%:+LastFound
+      Parent:=A_ScriptHwnd
+    }
     T["T",Abs(Parent)]:=Tool:=Struct(_TOOLINFO)
     ,Tool.uId:=Parent,Tool.hwnd:=Parent,Tool.uFlags:=(0|16)
     ,DllCall("GetClientRect","PTR",T.HWND,"PTR", T[Abs(Parent)].rect[])
@@ -218,7 +223,7 @@ TT_ADD(T,Control,Text:="",uFlags:="",Parent:=""){
   If uFlags
     If (Type(uFlags+0)!="Integer")
     {
-      Loop Parse, uflags, A_Space, A_Space
+      Loop Parse,uflags,A_Space,A_Space
         If A_LoopField
           %A_LoopField% := 1
       uFlags:=(HWND?0x1:HWND=""?0x1:0)|(Center?0x2:0)|(RTL?0x4:0)|(SUB?0x10:0)|(Track?0x20:0)|(Absolute?0x80:0)|(TRANSPARENT?0x100:0)|(ParseLinks?0x1000:0)
@@ -268,7 +273,7 @@ TT_Icon(T,icon:=0,icon_:=1,default:=1){
 
 TT_GetIcon(File:="",Icon_:=1){
   global _ICONINFO,_SHFILEINFO
-  static hIcon:={},AW:=A_IsUnicode?"W":"A",pToken:=0
+  static delete:={base:{__Delete:"TT_GetIcon"}},hIcon:={},AW:=A_IsUnicode?"W":"A",pToken:=0
    ,temp1:=DllCall( "LoadLibrary", "Str","gdiplus","PTR"),temp2:=VarSetCapacity(si, 16, 0) (si := Chr(1)) DllCall("gdiplus\GdiplusStartup", "PTR*",pToken, "PTR",&si, "PTR",0)
 	;~ static _ICONINFO:="fIcon,xHotspot,yHotSpot,HBITMAP hbmMask,HBITMAP hbmColor"
 	;~ static _SHFILEINFO:="HICON hIcon,iIcon,DWORD dwAttributes,TCHAR szDisplayName[260],TCHAR szTypeName[80]"
@@ -296,7 +301,7 @@ TT_GetIcon(File:="",Icon_:=1){
     Return hIcon[file,Icon_]:=DllCall("LoadImageW", "PTR", 0, "str", File, "uint", ext="cur"?2:1, "int", 0, "int", 0, "uint", 0x10,"PTR")
   else if InStr(",EXE,ICO,DLL,LNK,","," Ext ","){
     If (ext="LNK"){
-       FileGetShortcut File,Fileto,,,,FileIcon,FileIcon_
+       FileGetShortcut(File,Fileto,,,,FileIcon,FileIcon_)
        File:=!FileIcon ? FileTo : FileIcon
     }
     SplitPath(File,,,Ext)
@@ -308,7 +313,7 @@ TT_GetIcon(File:="",Icon_:=1){
       {
         nSize := StrLen(File)//2
         VarSetCapacity( Buffer,nSize ) 
-        Loop nSize 
+        Loop nSize
           NumPut( "0x" . SubStr(File,2*A_Index-1,2), Buffer, A_Index-1, "Char" )
       } else Return
     } else {
@@ -352,24 +357,22 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
     DetectHiddenWindows (DetectHiddenWindows:=A_DetectHiddenWindows ? "On" : "On")
 		; WinGetPid,PID,ahk_id %A_ScriptHwnd%
     PID:=DllCall("GetCurrentProcessId")
-    controls:=WinGetControls("ahk_id " hWndTray:=WinExist("ahk_class Shell_TrayWnd"))
-    for k,v in controls {
-      if InStr(v,"ToolbarWindow32"){
-        hWndToolBar:=ControlGethWnd(v, "ahk_id " hWndTray)
-        sClass:=WinGetClass("ahk_id " GetParent(hWndToolBar))
-        If (sClass = "SysPager")
-          Break
+    hWndTray:=DllCall("FindWindow","Str","Shell_TrayWnd", "PTR", 0)
+    for k,ToolbarWindow in WinGetControls("ahk_id " hWndTray)
+      if InStr(ToolbarWindow,"ToolbarWindow32")
+        && ("SysPager"=WinGetClass("ahk_id " DllCall( "GetParent", "Ptr", hWnd:=ControlGetHwnd(ToolbarWindow, "ahk_id " hWndTray) ))){
+        hWndToolBar:=ControlGetHwnd(ToolbarWindow32:=ToolbarWindow,"ahk_id " hWndTray)
+        Break
       }
-	}
     procpid:=WinGetPid("ahk_id " hWndToolBar)
-    DataH   := DllCall( "OpenProcess", "uint", 0x38, "int", 0, "uint", procpid,"PTR") ;0x38 = PROCESS_VM_OPERATION+READ+WRITE
-    ,bufAdr  := DllCall( "VirtualAllocEx", "PTR", DataH, "PTR", 0, "uint", sizeof(_TBBUTTON), "uint", MEM_COMMIT:=0x1000, "uint", PAGE_READWRITE:=0x4,"PTR")
-    Loop max:=DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x418,"PTR",0,"PTR",0,"PTR")
+    hProc   := DllCall( "OpenProcess", "uint", 0x38, "int", 0, "uint", procpid,"PTR") ;0x38 = PROCESS_VM_OPERATION+READ+WRITE
+    ,bufAdr  := DllCall( "VirtualAllocEx", "PTR", hProc, "PTR", 0, "uint", sizeof(TB), "uint", MEM_COMMIT:=0x1000, "uint", PAGE_READWRITE:=0x4,"PTR")
+	Loop max:=DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x418,"PTR",0,"PTR",0,"PTR")
     {
       i:=max-A_Index
       DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x417,"PTR",i,"PTR",bufAdr,"PTR")
-      ,DllCall("ReadProcessMemory", "PTR", DataH, "PTR", bufAdr, "PTR", TB[], "ptr", sizeof(TB), "ptr", 0)
-      ,DllCall("ReadProcessMemory", "PTR", DataH, "PTR", TB.dwData, "PTR", RC[], "PTR", 8, "PTR", 0)
+      ,DllCall("ReadProcessMemory", "PTR", hProc, "PTR", bufAdr, "PTR", TB[], "ptr", sizeof(TB), "ptr", 0)
+      ,DllCall("ReadProcessMemory", "PTR", hProc, "PTR", TB.dwData, "PTR", RC[], "PTR", 8, "PTR", 0)
 	  BWPID:=WinGetPID("ahk_id " NumGet(RC[],0,"PTR"))
 	  If (BWPID!=PID)
         continue
@@ -377,10 +380,10 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
         ControlGetPos xc,yc,xw,yw,"Button2","ahk_id " hWndTray
         xc+=xw/2, yc+=yw/4
       } else {
-        ControlGetPos xc,yc,,,,"ahk_id " hWndToolBar
+        ControlGetPos xc,yc,,,ToolbarWindow32,"ahk_id " hWndTray
         DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x41d,"PTR",i,"PTR",bufAdr,"PTR")
-        ,DllCall( "ReadProcessMemory", "PTR", DataH, "PTR", bufAdr, "PTR", RC[], "PTR", sizeof(RC), "PTR", 0 )
-        ,halfsize:=RC.bottom/2
+        ,DllCall( "ReadProcessMemory", "PTR", hProc, "PTR", bufAdr, "PTR", RC[], "PTR", sizeof(RC), "PTR", 0 )
+        ,halfsize:=(RC.bottom-RC.top)/2
         ,xc+=RC.left + halfsize
         ,yc+=RC.top + (halfsize/1.5)
       }
@@ -390,16 +393,16 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
       break
     }
     If (!xc && !yc){
-      If (A_OSVersion>"5" && A_OSVersion<"10")
-          ControlGetPos xc,yc,xw,yw,"Button1","ahk_id " hWndTray
-        else
+      If (SubStr(A_OsVersion,1,InStr(A_OsVersion,".")+1)>6.1)
           ControlGetPos xc,yc,xw,yw,"Button2","ahk_id " hWndTray
+        else
+          ControlGetPos xc,yc,xw,yw,"Button1","ahk_id " hWndTray
       xc+=xw/2, yc+=yw/4
       WinGetPos xw,yw,,,"ahk_id " hWndTray
       xc+=xw,yc+=yw
     }
-    DllCall( "VirtualFreeEx", "PTR", DataH, "PTR", bufAdr, "PTR", 0, "uint", MEM_RELEASE:=0x8000)
-    ,DllCall( "CloseHandle", "PTR", DataH )
+    DllCall( "VirtualFreeEx", "PTR", hProc, "PTR", bufAdr, "PTR", 0, "uint", MEM_RELEASE:=0x8000)
+    ,DllCall( "CloseHandle", "PTR", hProc )
     DetectHiddenWindows DetectHiddenWindows
     If (x="TrayIcon")
       x:=xc
@@ -407,8 +410,8 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
       y:=yc
   }
   If (x ="" || y =""){
-    pCursor.cbSize:=sizeof(pCursor)
-    ,DllCall("GetCursorInfo", "ptr", pCursor[])
+    ;pCursor.cbSize:=sizeof(pCursor)
+    DllCall("GetCursorInfo", "ptr", pCursor[])
     ,DllCall("GetIconInfo", "ptr", pCursor.hCursor, "ptr", pIcon[])
     If picon.hbmColor
       DllCall("DeleteObject", "ptr", pIcon.hbmColor)
@@ -621,7 +624,7 @@ TTM_SETTIPBKCOLOR(T,color:=0){
       Color:=%color%
   Color := (StrLen(Color) < 8 ? "0x" : "") . Color
   Color := ((Color&255)<<16)+(((Color>>8)&255)<<8)+(Color>>16) ; rgb -> bgr
-   Return DllCall("SendMessage","PTR",T.HWND,"UInt",TTM_SETTIPBKCOLOR,"PTR",color,"PTR",0,"PTR")
+  Return DllCall("SendMessage","PTR",T.HWND,"UInt",TTM_SETTIPBKCOLOR,"PTR",color,"PTR",0,"PTR")
 }
 TTM_SETTIPTEXTCOLOR(T,color:=0){
    static TTM_SETTIPTEXTCOLOR := 0x414
@@ -657,29 +660,6 @@ TTM_TRACKACTIVATE(T,activate:=0,pTOOLINFO:=0){
    Return DllCall("SendMessage","PTR",T.HWND,"UInt",0x411,"PTR",activate,"PTR",(pTOOLINFO)?(pTOOLINFO):(T.P[]),"PTR")
 }
 TTM_TRACKPOSITION(T,x:=0,y:=0){
-  Style:=WinGetStyle("ahk_id " t.hwnd)
-  if !(Style & 0x40){ ; Not Balloon
-    dtw:=Struct("int left,top,right,bottom")
-    dtw.right := GetSystemMetrics(78) ;SM_CXVIRTUALSCREEN
-    if (dtw.right) ; A non-zero value indicates the OS supports multiple monitors or at least SM_CXVIRTUALSCREEN.
-    {
-        dtw.left := GetSystemMetrics(76) ;SM_XVIRTUALSCREEN Might be negative or greater than zero.
-        dtw.right += dtw.left
-        dtw.top := GetSystemMetrics(77) ;SM_YVIRTUALSCREEN Might be negative or greater than zero.
-        dtw.bottom := dtw.top + GetSystemMetrics(79) ;SM_CYVIRTUALSCREEN
-    }
-    else ;  Win95/NT do not support SM_CXVIRTUALSCREEN and such, so zero was returned.
-        GetWindowRect(GetDesktopWindow(), dtw[])
-    ttw:=Struct("int left,top,right,bottom")
-    GetWindowRect(t.hwnd, ttw[])
-    tt_width := ttw.right - ttw.left
-    tt_height := ttw.bottom - ttw.top
-
-    if (x + tt_width >= dtw.right)
-      x := dtw.right - tt_width - 1
-    if (y + tt_height >= dtw.bottom)
-      y := dtw.bottom - tt_height - 1
-  }
   Return DllCall("SendMessage","PTR",T.HWND,"UInt",0x412,"PTR",0,"PTR",(x & 0xFFFF)|(y & 0xFFFF)<<16,"PTR")
 }
 TTM_UPDATE(T){

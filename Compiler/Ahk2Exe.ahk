@@ -51,15 +51,15 @@ ToolTip:=TT(Gui.Hwnd)
 Gui.OnEvent("Close","GuiClose")
 Gui.OnEvent("DropFiles","GuiDropFiles")
 Gui.Menu := MenuBar
-Gui.AddLink "x287 y10","
-(Q
-©2004-2009 Chris Mallet
+Gui.AddLink "x287 y10",
+(
+"©2004-2009 Chris Mallet
 ©2008-2011 Steve Gray (Lexikos)
 ©2011-" A_Year "  fincs
 ©2012-" A_Year " HotKeyIt
 <a href=`"http://ahkscript.org`">http://ahkscript.org</a>
-Note: Compiling does not guarantee source code protection.
-)"
+Note: Compiling does not guarantee source code protection."
+)
 Gui.AddText "x11 y97 w570 h2 +0x1007"
 Gui.SetFont("Bold")
 Gui.AddGroupBox "x11 y104 w570 h81", "Required Parameters"

@@ -70,7 +70,7 @@ TT(options:="",text:="",title:=""){
       ,SETTITLE:"TTM_SETTITLE",SETTOOLINFO:"TTM_SETTOOLINFO",SETWINDOWTHEME:"TTM_SETWINDOWTHEME"
       ,TRACKACTIVATE:"TTM_TRACKACTIVATE",TRACKPOSITION:"TTM_TRACKPOSITION",UPDATE:"TTM_UPDATE"
       ,UPDATETIPTEXT:"TTM_UPDATETIPTEXT",WINDOWFROMPOINT:"TTM_WINDOWFROMPOINT"
-      ,"base":{__Call:"TT_Set"}}
+      ,base:{__Call:"TT_Set"}}
   Parent:="",Gui:="",ClickTrough:="",Style:="",NOFADE:="",NoAnimate:="",NOPREFIX:="",AlwaysTip:="",ParseLinks:="",CloseButton:="",Balloon:="",maxwidth:=""
   ,INITIAL:="",AUTOPOP:="",RESHOW:="",OnClick:="",OnClose:="",OnShow:="",ClickHide:="",HWND:="",Center:="",RTL:="",SUB:="",Track:="",Absolute:=""
   ,TRANSPARENT:="",Color:="",Background:="",icon:=0
@@ -147,7 +147,6 @@ TT_Delete(this){ ;delete all ToolTips (will be executed OnExit)
 		this[i].DelTool(tool[])
 	  this.Delete(i)
 	}
-	TT_GetIcon() ;delete ToolTips and Destroy all icon handles
 }
 
 TT_Remove(T:=""){
@@ -274,7 +273,7 @@ TT_Icon(T,icon:=0,icon_:=1,default:=1){
 
 TT_GetIcon(File:="",Icon_:=1){
   global _ICONINFO,_SHFILEINFO
-  static hIcon:={},AW:=A_IsUnicode?"W":"A",pToken:=0
+  static delete:={base:{__Delete:"TT_GetIcon"}},hIcon:={},AW:=A_IsUnicode?"W":"A",pToken:=0
    ,temp1:=DllCall( "LoadLibrary", "Str","gdiplus","PTR"),temp2:=VarSetCapacity(si, 16, 0) (si := Chr(1)) DllCall("gdiplus\GdiplusStartup", "PTR*",pToken, "PTR",&si, "PTR",0)
 	;~ static _ICONINFO:="fIcon,xHotspot,yHotSpot,HBITMAP hbmMask,HBITMAP hbmColor"
 	;~ static _SHFILEINFO:="HICON hIcon,iIcon,DWORD dwAttributes,TCHAR szDisplayName[260],TCHAR szTypeName[80]"
@@ -394,7 +393,7 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
       break
     }
     If (!xc && !yc){
-      If (SubStr(A_OsVersion,1,InStr(A_OsVersion,".")-1)>5)
+      If (SubStr(A_OsVersion,1,InStr(A_OsVersion,".")+1)>6.1)
           ControlGetPos xc,yc,xw,yw,"Button2","ahk_id " hWndTray
         else
           ControlGetPos xc,yc,xw,yw,"Button1","ahk_id " hWndTray
