@@ -58,7 +58,7 @@ EnumIcons(ExeFile, iconID)
 	; RT_GROUP_ICON = 14
 	; RT_ICON = 3
 	global _EI_HighestIconID
-	static pEnumFunc := RegisterCallback("EnumIcons_Enum")
+	static pEnumFunc := CallbackCreate("EnumIcons_Enum")
 	
 	hModule := LoadLibraryEx(ExeFile, 0, 2)
 	if !hModule

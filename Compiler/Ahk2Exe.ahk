@@ -36,7 +36,7 @@ IcoFile := LastIcon
 BinFileId := FindBinFile(LastBinFile)
 
 #include *i __debug.ahk
-FileMenu:=MenuCreate(),HelpMenu:=MenuCreate(),MenuBar:=MenuCreate()
+FileMenu:=MenuCreate(),HelpMenu:=MenuCreate(),MenuBar:=MenuBarCreate()
 FileMenu.Add("&Convert", "Convert")
 FileMenu.Add()
 FileMenu.Add("E&xit`tAlt+F4", "GuiClose")
@@ -50,7 +50,7 @@ Gui :=GuiCreate()
 ToolTip:=TT(Gui.Hwnd)
 Gui.OnEvent("Close","GuiClose")
 Gui.OnEvent("DropFiles","GuiDropFiles")
-Gui.Menu := MenuBar
+Gui.MenuBar := MenuBar
 Gui.AddLink "x287 y10",
 (
 "©2004-2009 Chris Mallet
@@ -406,9 +406,10 @@ if !CustomBinFile
 	RegWrite BinFiles[guiSubMit.BinFileId], "REG_SZ", "HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastBinFile"
 return
 
-Help:
+Help(){
 If !FileExist(helpfile := A_ScriptDir "\..\AutoHotkey.chm")
 	Util_Error("Error: cannot find AutoHotkey help file!")
+}
 
 #DllImport HtmlHelp,hhctrl.ocx\HtmlHelp,PTR,,Str,,UInt,,PTR,
 VarSetCapacity(ak, ak_size := 8+5*A_PtrSize+4, 0) ; HH_AKLINK struct

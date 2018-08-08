@@ -145,7 +145,7 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 			Util_Error("Error: The AutoHotkey build used for auto-inclusion of library functions is not recognized.", 1, AhkPath)
 		if AhkType = "Legacy"
 			Util_Error("Error: Legacy AutoHotkey versions (prior to v1.1) are not allowed as the build used for auto-inclusion of library functions.", 1, AhkPath)
-		FileAppend ScriptText,ilibfile ".script", UTF-8
+		FileAppend ScriptText,ilibfile ".script", "UTF-8"
     RunWait "`"" A_Comspec "`" /C `"`"" AhkPath "`" /iLib `"" ilibfile "`" /ErrorStdOut `"" ilibfile ".script`" 2>`"" ilibfile ".error`"`"", FirstScriptDir, "HIDE UseErrorLevel"
 		if (ErrorLevel = 2)
 		{		
