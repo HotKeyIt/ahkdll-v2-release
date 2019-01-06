@@ -5,7 +5,7 @@
         ,ahkExec:=GetProcAddress(lib,"ahkExec"),ahkExecuteLine:=GetProcAddress(lib,"ahkExecuteLine"),ahkFindFunc:=GetProcAddress(lib,"ahkFindFunc"),ahkFindLabel:=GetProcAddress(lib,"ahkFindLabel")
         ,ahkgetvar:=GetProcAddress(lib,"ahkgetvar"),ahkassign:=GetProcAddress(lib,"ahkassign"),ahkLabel:=GetProcAddress(lib,"ahkLabel"),ahkPause:=GetProcAddress(lib,"ahkPause")
 		,ahkIsUnicode:=GetProcAddress(lib,"ahkIsUnicode"),ahkReady:=GetProcAddress(lib,"ahkReady")
-	thread:={(""):ThreadID:=s=""?p:NewThread((w?"SetEvent(" hEvent:=CreateEvent() ")`n":"") s,p,t)
+	thread:={(""):ThreadID:=s=""?GetCurrentThreadId():NewThread((w?"SetEvent(" hEvent:=CreateEvent() ")`n":"") s,p,t)
 	  ,_ahkFunction:DynaCall(ahkFunction,"s==sttttttttttui","",0,0,0,0,0,0,0,0,0,0,ThreadID)
 	  ,_ahkPostFunction:DynaCall(ahkPostFunction,"i==sttttttttttui","",0,0,0,0,0,0,0,0,0,0,ThreadID)
 	  ,ahkFunction:DynaCall(ahkFunction,"s==sssssssssssui","","","","","","","","","","","",ThreadID)
@@ -28,7 +28,7 @@
 	return thread
 }
 Exethread_exit(ThreadID){
-	static pExitApp:=NumGet(GetProcAddress(0,"g_ThreadExitApp"),"PTR"),Exethread_CloseWindows:=RegisterCallback("Exethread_CloseWindows")
+	static pExitApp:=NumGet(GetProcAddress(0,"g_ThreadExitApp"),"PTR"),Exethread_CloseWindows:=CallbackCreate("Exethread_CloseWindows")
 	if hThread:=OpenThread(THREAD_ALL_ACCESS:=2032639,true,ThreadID)
 		success:=QueueUserAPC(pExitApp,hThread,0),CloseHandle(hThread),PostThreadMessage(ThreadID, 0, 0, 0),EnumThreadWindows(ThreadID,Exethread_CloseWindows,0)
 	return success
