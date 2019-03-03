@@ -71,7 +71,7 @@ InjectAhkDll(PID, dll := "AutoHotkey.dll", script := 0) {
 
     ; Reserve memory in remote process where our script will be saved
     if !pBufferRemote := DllCall("VirtualAllocEx", "Ptr", hProc, "Ptr", 0, "Ptr", nScriptLength, "UInt", MEM_COMMIT, "UInt", PAGE_EXECUTE_READWRITE, "Ptr")
-      return (DllCall("MessageBox", "Ptr", 0, "Str", "Could not reseve memory for process.", "Str", "Error", "UInt", 0)
+      return (DllCall("MessageBox", "Ptr", 0, "Str", "Could not reserve memory for process.", "Str", "Error", "UInt", 0)
             , DllCall("CloseHandle", "Ptr", hProc))
 
     ; Write script to remote process memory
@@ -194,7 +194,7 @@ InjectAhkDll(PID, dll := "AutoHotkey.dll", script := 0) {
 
     ; Reserve memory in remote process where our script will be saved
     if !pBufferScript := DllCall("VirtualAllocEx", "Ptr", hProc, "Ptr", 0, "Ptr", nScriptLength, "UInt", MEM_COMMIT, "UInt", PAGE_EXECUTE_READWRITE, "Ptr")
-      return (DllCall("MessageBox", "Ptr", 0, "Str", "Could not reseve memory for process.", "Str", "Error", "UInt", 0)
+      return (DllCall("MessageBox", "Ptr", 0, "Str", "Could not reserve memory for process.", "Str", "Error", "UInt", 0)
             , DllCall("CloseHandle", "Ptr", hProc))
 
     ; Write script to remote process memory
