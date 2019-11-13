@@ -3,7 +3,7 @@
 ProcessDirectives(ExeFile, module, cmds, IcoFile, UseCompression, UsePassword)
 {
   global GuiStatusBar
-	state := { ExeFile: ExeFile, module: module, resLang: 0x409, verInfo: {}, IcoFile: IcoFile, PostExec: [] }
+	state := { ExeFile: ExeFile, module: module, resLang: 0x409, verInfo: {}, IcoFile: IcoFile, PostExec: [] , OutPreproc : 0, ConsoleApp : 0}
 	for _,cmdline in cmds
 	{
 		If !CLIMode
@@ -176,7 +176,7 @@ ChangeVersionInfo(ExeFile, hUpdate, verInfo)
 	
 	hRsrc := FindResource(hModule, 1, 16) ; Version Info\1
 	hMem := LoadResource(hModule, hRsrc)
-	vi := new VersionRes(LockResource(hMem))
+	vi := VersionRes.new(LockResource(hMem))
 	FreeLibrary(hModule)
 	
 	ffi := vi.GetDataAddr()
@@ -236,7 +236,7 @@ SafeGetViChild(vi, name)
 	c := vi.GetChild(name)
 	if !c
 	{
-		c := new VersionRes()
+		c := VersionRes.new()
 		c.Name := name
 		vi.AddChild(c)
 	}
@@ -245,7 +245,7 @@ SafeGetViChild(vi, name)
 
 Util_ObjIsEmpty(obj)
 {
-	for _,__ in obj
+	for _,__ in Type(obj)="Object"?obj.OwnProps() : obj
 		return false
 	return true
 }

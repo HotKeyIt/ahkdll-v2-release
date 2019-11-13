@@ -1,10 +1,7 @@
 ThreadObj(script,cmdLine:="",title:=""){
-	ThreadID:=NewThread("A_ParentThread:=ObjShare(" ObjShare(new _ThreadClass) ")`nNumPut(ObjShare(ThreadObj_Class())," getvar(pObjShare:=0) ",`"PTR`")`nSetEvent(" hEvent:=CreateEvent() ")`n" script,cmdLine,title)
+	ThreadID:=NewThread("A_ParentThread:=ObjShare(" ObjShare(ThreadObj_Class()) ")`nNumPut(ObjShare(ThreadObj_Class())," getvar(pObjShare:=0) ",`"PTR`")`nSetEvent(" hEvent:=CreateEvent() ")`n" script,cmdLine,title)
 	,WaitForSingleObject(hEvent,1000),CloseHandle(hEvent)
 	return pObjShare?ObjShare(pObjShare):""
-}
-ThreadObj_Class(){
-	return new _ThreadClass
 }
 ThreadObj_IsRunning(thread){
 	ComError:=ComObjError(false)
@@ -24,10 +21,10 @@ Class _ThreadClass {
 	PostCall(func,p*){
 		static postcall,params
 		postcall:=func,params:=p
-		SetTimer,PostCall,-1
+		SetTimer "PostCall",-1
 		return
 		PostCall:
-			MsgBox % %postcall%(params*)
+			MsgBox %postcall%(params*)
 		return
 	}
 	Call(func,p*){
@@ -48,22 +45,25 @@ Class _ThreadClass {
 	AddFile(file, execute := 0){
 		return addFile(file, execute)
 	}
-	GoTo(label){
+	GoToLabel(label){
 		if !IsLabel(label)
 			return 0
-		SetTimer % label,-1
+		SetTimer label,-1
 		Return 1
 	}
-	GoSub(label){
+	GoSubLabel(label){
 		if !IsLabel(label)
 			return 0
-		GoSub % label
+		GoSub(label)
 		return 1
 	}
 	ExitApp(){
-		SetTimer,ExitApp,-1
+		SetTimer "ExitApp",-1
 		Return
 		ExitApp:
 		ExitApp
 	}
+}
+ThreadObj_Class(){
+	return _ThreadClass.new()
 }

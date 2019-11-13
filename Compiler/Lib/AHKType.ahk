@@ -8,8 +8,10 @@ AHKType(exeName)
 	if !vert:=FileGetVersion(exeName)
 		return "FAIL"
 	
-	vert := StrSplit(vert, ".")
-	vert := vert.4 | (vert.3 << 8) | (vert.2 << 16) | (vert.1 << 24)
+  vert := StrSplit(vert, ".")
+  if vert.length<4
+    return "FAIL"
+	vert := vert[4] | (vert[3] << 8) | (vert[2] << 16) | (vert[1] << 24)
 	
 	if (0x014C != exeMachine := GetExeMachine(exeName)) && (exeMachine != 0x8664)
 		return "FAIL"
@@ -21,13 +23,13 @@ AHKType(exeName)
 	if !DllCall("version\GetFileVersionInfo", "str", exeName, "uint", 0, "uint", VersionInfoSize, "ptr", &VersionInfo)
 		return "FAIL"
 	
-	if !DllCall("version\VerQueryValue", "ptr", &VersionInfo, "str", "\VarFileInfo\Translation", "ptr*", lpTranslate, "uint*", cbTranslate)
+	if !DllCall("version\VerQueryValue", "ptr", &VersionInfo, "str", "\VarFileInfo\Translation", "ptr*", lpTranslate:=0, "uint*", cbTranslate:=0)
 		return "FAIL"
 	
 	id := SubStr("0000" SubStr(format("0x{1:X}",NumGet(lpTranslate+0, "UShort")), 3), -4, 4) 
 		. SubStr("0000" SubStr(format("0x{1:X}",NumGet(lpTranslate+2, "UShort")), 3), -4, 4)
 	
-	if !DllCall("version\VerQueryValue", "ptr", &VersionInfo, "str", "\StringFileInfo\" id "\ProductName", "ptr*", pField, "uint*", cbField)
+	if !DllCall("version\VerQueryValue", "ptr", &VersionInfo, "str", "\StringFileInfo\" id "\ProductName", "ptr*", pField:=0, "uint*", cbField:=0)
 		return "FAIL"
 	
 	; Check it is actually an AutoHotkey executable

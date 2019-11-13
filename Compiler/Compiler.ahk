@@ -79,7 +79,7 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 	if !module
 		Util_Error("Error: Error opening the destination file.")
 	
-	tempWD := new CTempWD(ScriptDir)
+	tempWD := CTempWD.new(ScriptDir)
 	dirState := ProcessDirectives(ExeFile, module, Directives, IcoFile, UseCompression, UsePassword)
 	IcoFile := dirState.IcoFile
 	

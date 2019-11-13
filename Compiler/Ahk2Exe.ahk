@@ -63,39 +63,39 @@ Note: Compiling does not guarantee source code protection."
 Gui.AddText "x11 y97 w570 h2 +0x1007"
 Gui.SetFont("Bold")
 Gui.AddGroupBox "x11 y104 w570 h81", "Required Parameters"
-Gui.SetFont("Normal")
+Gui.SetFont(,"Normal")
 Gui.AddText "x17 y126", "&Source (script file)"
-GuiBrowseAhk:=Gui.AddEdit("x137 y121 w315 h23 +ReadOnly -WantTab vAhkFile", AhkFile)
+GuiBrowseAhk:=Gui.AddEdit("x147 y121 w315 h23 +ReadOnly -WantTab vAhkFile", AhkFile)
 ToolTip.Add("Edit1","Select path of AutoHotkey Script to compile")
-(GuiButton2:=Gui.AddButton("x459 y121 w53 h23", "&Browse")).OnEvent("Click","BrowseAhk")
+(GuiButton2:=Gui.AddButton("x465 y121 w53 h23", "&Browse")).OnEvent("Click","BrowseAhk")
 ToolTip.Add("Button2","Select path of AutoHotkey Script to compile")
 Gui.AddText "x17 y155", "&Destination (.exe file)"
-GuiBrowseExe:=Gui.AddEdit("x137 y151 w315 h23 +ReadOnly -WantTab vExeFile", Exefile)
+GuiBrowseExe:=Gui.AddEdit("x147 y151 w315 h23 +ReadOnly -WantTab vExeFile", Exefile)
 ToolTip.Add("Edit2","Select path to resulting exe / dll")
-(GuiButton3:=Gui.AddButton("x459 y151 w53 h23", "B&rowse")).OnEvent("Click","BrowseExe")
+(GuiButton3:=Gui.AddButton("x465 y151 w53 h23", "B&rowse")).OnEvent("Click","BrowseExe")
 ToolTip.Add("Button3","Select path to resulting exe / dll")
 Gui.SetFont("Bold")
 Gui.AddGroupBox "x11 y187 w570 h148", "Optional Parameters"
-Gui.SetFont("Normal")
+Gui.SetFont(,"Normal")
 Gui.AddText "x18 y208", "Custom Icon (.ico file)"
-GuiBrowseIco:=Gui.AddEdit("x138 y204 w315 h23 +ReadOnly vIcoFile", IcoFile)
+GuiBrowseIco:=Gui.AddEdit("x147 y204 w315 h23 +ReadOnly vIcoFile", IcoFile)
 ToolTip.Add("Edit3","Select Icon to use in resulting exe / dll")
-(GuiButton4:=Gui.AddButton("x461 y204 w53 h23", "Br&owse")).OnEvent("Click","BrowseIco")
+(GuiButton4:=Gui.AddButton("x465 y204 w53 h23", "Br&owse")).OnEvent("Click","BrowseIco")
 ToolTip.Add("Button5","Select Icon to use in resulting exe / dll")
 Gui.AddButton("x519 y204 w53 h23", "D&efault").OnEvent("Click","DefaultIco")
 ToolTip.Add("Button6","Use default Icon")
 Gui.AddText "x18 y237", "Base File (.bin)"
-Gui.AddDDL "x138 y233 w315 h23 R10 AltSubmit vBinFileId Choose" BinFileId, BinNames
+Gui.AddDDL "x147 y233 w315 h23 R10 AltSubmit vBinFileId Choose" BinFileId, BinNames
 ToolTip.Add("ComboBox1","Select AutoHotkey binary file to use for compilation")
-(GuiUseCompression:=Gui.AddCheckBox("x138 y260 w315 h20 vUseCompression Checked" LastUseCompression, "Use compression to reduce size of resulting executable")).OnEvent("Click","CheckCompression")
+(GuiUseCompression:=Gui.AddCheckBox("x10 y260 w430 h20 vUseCompression Checked" LastUseCompression, "Use compression to reduce size of resulting executable")).OnEvent("Click","CheckCompression")
 ToolTip.Add("Button7","Compress all resources")
-(GuiUseEncrypt:=Gui.AddCheckBox("x138 y282 w230 h20 vUseEncrypt Checked" LastUseEncrypt, "Encrypt. Enter password used in executable:")).OnEvent("Click","CheckCompression")
+(GuiUseEncrypt:=Gui.AddCheckBox("x10 y282 w280 h20 vUseEncrypt Checked" LastUseEncrypt, "Encrypt. Enter password used in executable:")).OnEvent("Click","CheckCompression")
 ToolTip.Add("Button8","Use AES encryption for resources (requires a Password)")
-Gui.AddEdit "x370 y282 w100 h20 Password vUsePassword", "AutoHotkey"
+Gui.AddEdit "x312 y282 w150 h20 Password vUsePassword", "AutoHotkey"
 ToolTip.Add("Edit4","Enter password for encryption (default = AutoHotkey).`nAutoHotkey binary must be using this password internally")
-(GuiUseMPRESS:=Gui.AddCheckBox("x138 y304 w315 h20 vUseMpress Checked" LastUseMPRESS, "Use MPRESS (if present) to compress resulting exe")).OnEvent("Click","CheckCompression")
+(GuiUseMPRESS:=Gui.AddCheckBox("x10 y304 w330 h20 vUseMpress Checked" LastUseMPRESS, "Use MPRESS (if present) to compress resulting exe")).OnEvent("Click","CheckCompression")
 ToolTip.Add("Button9","MPRESS makes executables smaller and decreases start time when loaded from slow media")
-Gui.AddButton("x235 y338 w125 h28 +Default", "> &Compile Executable <").OnEvent("Click","Convert")
+Gui.AddButton("x235 y338 w160 h28 +Default", "> &Compile Executable <").OnEvent("Click","Convert")
 ToolTip.Add("Button10","Convert script to executable file")
 GuiStatusBar:=Gui.AddStatusBar(, "Ready")
 ;@Ahk2Exe-IgnoreBegin
@@ -104,12 +104,13 @@ Gui.AddPic "x30 y5 +0x801000", A_ScriptDir "\logo.png"
 /*@Ahk2Exe-Keep
 gosub AddPicture
 */
-Gui.Show "w594 h400", "Ahk2Exe for AutoHotkey v" A_AhkVersion " -- Script to EXE Converter"
+Gui.Title:="Ahk2Exe for AutoHotkey v" A_AhkVersion " -- Script to EXE Converter"
+Gui.Show "w594 h400"
 GuiButton2.Focus()
 Return:
 return
 
-CheckCompression(Control){
+CheckCompression(Control, info){
   global
   GuiSubMit := Gui.SubMit(0)
   If Control.name="UseCompression" && !GuiSubMit.UseCompression{
@@ -120,7 +121,7 @@ CheckCompression(Control){
   }
 }
 
-GuiClose(){
+GuiClose(info*){
   gosub SaveSettings
   ExitApp
 }
@@ -221,13 +222,13 @@ FindBinFile(name)
 }
 
 ParseCmdLine:
-if !A_Args.Length()
+if !A_Args.Length
 	return
 
 Error_ForceExit := true
 
 p := []
-Loop A_Args.Length()
+Loop A_Args.Length
 {
 	; if (A_Args[A_Index] = "/NoDecompile")
 		; Util_Error("Error: /NoDecompile is not supported.")
@@ -235,10 +236,10 @@ Loop A_Args.Length()
 	p.Push(A_Args[A_Index])
 }
 
-if Mod(p.Length(), 2)
+if Mod(p.Length, 2)
 	goto BadParams
 
-Loop p.Length() // 2
+Loop p.Length // 2
 {
 	p1 := p[2*(A_Index-1)+1]
 	p2 := p[2*(A_Index-1)+2]
@@ -302,7 +303,7 @@ _ProcessMPRESS:
 UseMPRESS := p2
 return
 
-BrowseAhk(Control){
+BrowseAhk(Control, info){
   global
   ov := FileSelect(1, LastScriptDir, "Open", "AutoHotkey files (*.ahk)")
   if ErrorLevel
@@ -310,7 +311,7 @@ BrowseAhk(Control){
   GuiBrowseAhk.text:=ov
 }
 
-BrowseExe(Control){
+BrowseExe(Control, info){
   global
   ov :=FileSelect("S16", LastExeDir, "Save As", "Executable files (*.exe;*.dll)")
   if ErrorLevel
@@ -321,7 +322,7 @@ BrowseExe(Control){
   GuiBrowseExe.text:=ov
 }
 
-BrowseIco(Control){
+BrowseIco(Control, info){
   global
   ov:=FileSelect(1, LastIconDir, "Open", "Icon files (*.ico)")
   if ErrorLevel
@@ -329,7 +330,7 @@ BrowseIco(Control){
   GuiBrowseIco.text:= ov
 }
 
-DefaultIco(Control){
+DefaultIco(Control, info){
   global
   GuiBrowseIco.text :=IcoFile
 }
@@ -345,7 +346,7 @@ ConvertCLI:
   FileAppend "Successfully compiled: " ExeFile "`n", "*"
 Return
 
-Convert(){
+Convert(Control, info){
   global
   guiSubMit := Gui.SubMit(0)
   BinFile := BinFiles[BinFileId]
@@ -361,7 +362,7 @@ Convert(){
     ; else
       ; FileAppend, Warning`, Resulting exe will not be protected properly`, use AutoHotkeySC.bin file to have more secure protection.: %ExeFile%`n, *
   ; }
-  AhkCompile(guiSubMit.AhkFile, guiSubMit.ExeFile, guiSubMit.IcoFile, BinFiles[guiSubMit.BinFileId], guiSubMit.UseMpress, guiSubMit.UseCompression, guiSubMit.UseInclude, guiSubMit.UseIncludeResource, guiSubMit.UseEncrypt?guiSubMit.UsePassword:"")
+  AhkCompile(guiSubMit.AhkFile, guiSubMit.ExeFile, guiSubMit.IcoFile, BinFiles[guiSubMit.BinFileId], guiSubMit.UseMpress, guiSubMit.UseCompression, 0, 0, guiSubMit.UseEncrypt?guiSubMit.UsePassword:"")
   MsgBox "Conversion complete.", "Ahk2Exe", 64
 }
 
