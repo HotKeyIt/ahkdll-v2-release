@@ -110,7 +110,7 @@ GuiButton2.Focus()
 Return:
 return
 
-CheckCompression(Control, info){
+CheckCompression(p*){
   global
   GuiSubMit := Gui.SubMit(0)
   If Control.name="UseCompression" && !GuiSubMit.UseCompression{
@@ -121,12 +121,12 @@ CheckCompression(Control, info){
   }
 }
 
-GuiClose(info*){
+GuiClose(p*){
   gosub SaveSettings
   ExitApp
 }
 
-GuiDropFiles(){
+GuiDropFiles(p*){
   global
   if A_EventInfo > 2
     Util_Error("You cannot drop more than one file into this window!")
@@ -303,7 +303,7 @@ _ProcessMPRESS:
 UseMPRESS := p2
 return
 
-BrowseAhk(Control, info){
+BrowseAhk(p*){
   global
   ov := FileSelect(1, LastScriptDir, "Open", "AutoHotkey files (*.ahk)")
   if ErrorLevel
@@ -311,7 +311,7 @@ BrowseAhk(Control, info){
   GuiBrowseAhk.text:=ov
 }
 
-BrowseExe(Control, info){
+BrowseExe(p*){
   global
   ov :=FileSelect("S16", LastExeDir, "Save As", "Executable files (*.exe;*.dll)")
   if ErrorLevel
@@ -322,7 +322,7 @@ BrowseExe(Control, info){
   GuiBrowseExe.text:=ov
 }
 
-BrowseIco(Control, info){
+BrowseIco(p*){
   global
   ov:=FileSelect(1, LastIconDir, "Open", "Icon files (*.ico)")
   if ErrorLevel
@@ -330,7 +330,7 @@ BrowseIco(Control, info){
   GuiBrowseIco.text:= ov
 }
 
-DefaultIco(Control, info){
+DefaultIco(p*){
   global
   GuiBrowseIco.text :=IcoFile
 }
@@ -346,7 +346,7 @@ ConvertCLI:
   FileAppend "Successfully compiled: " ExeFile "`n", "*"
 Return
 
-Convert(Control, info){
+Convert(p*){
   global
   guiSubMit := Gui.SubMit(0)
   BinFile := BinFiles[BinFileId]
@@ -407,7 +407,7 @@ if !CustomBinFile
 	RegWrite BinFiles[guiSubMit.BinFileId], "REG_SZ", "HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe_H", "LastBinFile"
 return
 
-Help(){
+Help(p*){
 If !FileExist(helpfile := A_ScriptDir "\..\AutoHotkey.chm")
 	Util_Error("Error: cannot find AutoHotkey help file!")
 }
@@ -418,7 +418,7 @@ VarSetCapacity(ak, ak_size := 8+5*A_PtrSize+4, 0) ; HH_AKLINK struct
 ,HtmlHelp(Gui.Hwnd, helpfile, 0x000D, &ak) ; 0x000D: HH_KEYWORD_LOOKUP
 return
 
-About(){
+About(p*){
   MsgBox "
   (Q
   Ahk2Exe - Script to EXE Converter
