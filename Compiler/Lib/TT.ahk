@@ -111,7 +111,8 @@ Class _ToolTipClass{
       _ToolTipClass._.RemoveAt(i)
     }
     this.GetIcon() ;delete ToolTips and Destroy all icon handles
-  }*/
+  }
+  */
 
   Remove(){
     for id,Tool in _ToolTipClass._
@@ -144,7 +145,7 @@ Class _ToolTipClass{
         this.T:=Map()
       this.T[Abs(Parent)]:=Tool:=Struct(_TOOLINFO)
       ,Tool.uId:=Parent,Tool.hwnd:=Parent,Tool.uFlags:=(0|16)
-      ,DllCall("GetClientRect","PTR",this.HWND,"PTR", this.%Abs(Parent)%.rect[])
+      ,DllCall("GetClientRect","PTR",this.HWND,"PTR", this.%Abs(Parent)%.rect[""])
       ,this.ADDTOOL(T["T",Abs(Parent)][])
     }
     If (text="")
@@ -165,7 +166,7 @@ Class _ToolTipClass{
     ,Tool.cbSize:=sizeof(_TOOLINFO)
     ,Tool.lpszText:=RegExReplace(text,"<a\K[^<]*?>",">")
     ,Tool.uId:=Control,Tool.hwnd:=Parent?Parent:this.P.hwnd,Tool.uFlags:=uFlags?(uFlags|16):(1|16)
-    ,DllCall("GetClientRect","PTR",this.HWND,"PTR",Tool.rect[])
+    ,DllCall("GetClientRect","PTR",this.HWND,"PTR",Tool.rect[""])
     this.ADDTOOL(Tool[])
     DetectHiddenWindows DetectHiddenWindows
   }
