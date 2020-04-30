@@ -110,13 +110,13 @@ GuiButton2.Focus()
 Return:
 return
 
-CheckCompression(p*){
+CheckCompression(c,p*){
   global
-  GuiSubMit := Gui.SubMit(0)
-  If Control.name="UseCompression" && !GuiSubMit.UseCompression{
+  GuiSubMit := c.Gui.SubMit(0)
+  If c.name="UseCompression" && !GuiSubMit.UseCompression{
     GuiUseEncrypt.value := false
     GuiUseCompression.value := false
-  } else If Control.Name="UseEncrypt" && GuiSubMit.UseEncrypt{
+  } else If c.Name="UseEncrypt" && GuiSubMit.UseEncrypt{
     GuiUseCompression := true
   }
 }
@@ -126,17 +126,17 @@ GuiClose(p*){
   ExitApp
 }
 
-GuiDropFiles(p*){
+GuiDropFiles(gui,ctrl,file,p*){
   global
-  if A_EventInfo > 2
+  if file.Length > 2
     Util_Error("You cannot drop more than one file into this window!")
-  SplitPath A_GuiEvent,,, dropExt
+  SplitPath file[1],,, dropExt
   if (dropExt = "ahk")
-    GuiBrowseAhk.text :=A_GuiEvent
+    GuiBrowseAhk.text :=file[1]
   else if (dropExt = "ico")
-    GuiBrowseIco.text :=A_GuiEvent
+    GuiBrowseIco.text :=file[1]
   else if InStr(".exe.dll.","." dropExt ".")
-    GuiBrowseExe.text := A_GuiEvent
+    GuiBrowseExe.text := file[1]
 }
 
 /*@Ahk2Exe-Keep
@@ -172,7 +172,7 @@ GdiplusShutdown(gdipToken)
 FreeLibrary(hGdip)
 ObjRelease(pStream)
 return
-
+7
 */
 
 BuildBinFileList:
