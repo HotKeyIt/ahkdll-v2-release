@@ -164,7 +164,7 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 			Util_Error("Error: Impossible BMP file!")
 		pData += 14, fSize -= 14
 	}
-	if !UpdateResource(state.module, resType, resName, state.resLang, pData, fSize)
+	if !UpdateResource(state.module, resType is "digit"?resType+0:resType, resName is "digit"?resName+0:resName, state.resLang, pData, fSize)
 		Util_Error("Error adding resource:`n`n" rsrc)
 	VarSetCapacity(fData, 0)
 }
