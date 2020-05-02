@@ -150,7 +150,7 @@ hRSrc := FindResource(0, "LOGO.PNG", 10)
 sData := SizeofResource(0, hRSrc)
 hRes  := LoadResource(0, hRSrc)
 pData := LockResource(hRes)
-If NumGet(pData,0,"UInt")=0x04034b50
+If NumGet(pData,"UInt")=0x04034b50
 	sData:=UnZipRawMemory(pData,sData,resLogo),pData:=&resLogo
 hGlob := GlobalAlloc(2, sData) ; 2=GMEM_MOVEABLE
 pGlob := GlobalLock(hGlob)
@@ -172,7 +172,7 @@ GdiplusShutdown(gdipToken)
 FreeLibrary(hGdip)
 ObjRelease(pStream)
 return
-7
+
 */
 
 BuildBinFileList:

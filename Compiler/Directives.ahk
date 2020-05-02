@@ -119,6 +119,7 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 	if !resName
 		resName := resFileName, defResName := true
 	resName:=StrUpper(resName)
+  
 	if (resType = "")
 	{
 		; Auto-detect resource type
@@ -140,10 +141,10 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 	}
 	typeType := "str"
 	nameType := "str"
-	if Type(resType+0) = "Integer"
+	if resType is "digit"
 		if between(resType ,0,0xFFFF)
 			typeType := "uint"
-	if Type(resName+0) = "Integer"
+	if resName is "digit"
 		if between(resName,0,0xFFFF)
 			nameType := "uint"
 	If UseCompression && resType=10{
@@ -155,7 +156,7 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 		fSize:=FileGetSize(resFile)
 		fData:=FileRead(resFile,"RAW")
 	}
-	pData := &fData
+	pData := fData.ptr
 	if resType = 2
 	{
 		; Remove BM header in order to make it a valid bitmap resource
@@ -163,7 +164,7 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 			Util_Error("Error: Impossible BMP file!")
 		pData += 14, fSize -= 14
 	}
-	if !UpdateResource(state.module, resType+0?resType+0:resType, resName, state.resLang, pData, fSize)
+	if !UpdateResource(state.module, resType, resName, state.resLang, pData, fSize)
 		Util_Error("Error adding resource:`n`n" rsrc)
 	VarSetCapacity(fData, 0)
 }
@@ -181,7 +182,7 @@ ChangeVersionInfo(ExeFile, hUpdate, verInfo)
 	
 	ffi := vi.GetDataAddr()
 	props := SafeGetViChild(SafeGetViChild(vi, "StringFileInfo"), "040904b0")
-	for k,v in verInfo
+	for k,v in verInfo.OwnProps()
 	{
 		if IsLabel(lbl := "_VerInfo_" k)
 			gosub(lbl)

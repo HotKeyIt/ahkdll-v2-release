@@ -29,10 +29,9 @@ ReplaceAhkIcon(re, IcoFile, ExeFile, iconID := 159)
 	
 	Loop wCount
 	{
-		thisID := ids[A_Index]
-		if !thisID
+		if !ids.Has(A_Index)
 			thisID := ++ _EI_HighestIconID
-		
+		else thisID := ids[A_Index]
 		f.RawRead(ige+0, 12) ; read all but the offset
 		NumPut(thisID, ige+12, "UShort")
 		
@@ -81,7 +80,7 @@ EnumIcons(ExeFile, iconID)
 	Loop wCount
 	{
 		pResDirEntry := pResDir + (A_Index-1)*14
-		iconIDs[A_Index] := NumGet(pResDirEntry+12, "UShort")
+		iconIDs.Push(NumGet(pResDirEntry+12, "UShort"))
 	}
 	
 	FreeLibrary(hModule)
