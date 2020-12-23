@@ -199,9 +199,9 @@ Progress(aOptions:="",aSubText:="", aMainText:="", aTitle:="",aFontName:=""){
     ;  For simplicity, the hwnd_text1 control is not expanded dynamically if it is currently of
     ;  height zero.  The user can recreate the window if a different height is needed.
     if (aMainText!="" && splash.hwnd_text1)
-      SendMessage_(splash.hwnd_text1, WM_SETTEXT, 0, &aMainText)
+      SendMessage_(splash.hwnd_text1, WM_SETTEXT, 0, StrPtr(aMainText))
     if (aSubText!="")
-      SendMessage_(splash.hwnd_text2, WM_SETTEXT, 0, &aSubText)
+      SendMessage_(splash.hwnd_text2, WM_SETTEXT, 0, StrPtr(aSubText))
     if (aTitle!="")
       SetWindowText(splash.hwnd, aTitle) ;  Use the simple method for parent window titles.
     return
@@ -260,7 +260,7 @@ Progress(aOptions:="",aSubText:="", aMainText:="", aTitle:="",aFontName:=""){
   splash.object_width := COORD_UNSPECIFIED  ;  Currently only used for SplashImage, not Progress.
     splash.margin_x := 10
     splash.margin_y := 5
-  cp:=(&aOptions)-2
+  cp:=(StrPtr(aOptions))-2
   while (""!=cp_:=StrGet(cp:=cp+2,1)){
   ;for (cp2, cp = options; cp!=""; ++cp)
     If (cp_="a"){  ;  Non-Always-on-top.  Synonymous with A0 in early versions.
@@ -284,7 +284,7 @@ Progress(aOptions:="",aSubText:="", aMainText:="", aTitle:="",aFontName:=""){
       ; 'W': ;  Window/Background color.
         color_str:=StrGet(cp+2,32)
         If (space_pos:=InStr(color_str," ")) ^ (tab_pos:=InStr(color_str,A_Tab))
-          StrPut("",(&color_str)+(space_pos&&space_pos<tab_pos?space_pos:tab_pos?tab_pos:space_pos)*2)
+          StrPut("",(StrPtr(color_str))+(space_pos&&space_pos<tab_pos?space_pos:tab_pos?tab_pos:space_pos)*2)
         ; else a color name can still be present if it's at the end of the string.
         color := ( !color_str || !InStr(".black.silver.gray.white.maroon.red.purple.fuchsia.green.lime.olive.yellow.navy.blue.teal.aqua.default.","." color_str ".") )
                 ? CLR_NONE : %aColorName%
@@ -393,9 +393,9 @@ Progress(aOptions:="",aSubText:="", aMainText:="", aTitle:="",aFontName:=""){
   ;  Get name and size of default font.
   hfont_default := GetStockObject(DEFAULT_GUI_FONT)
   hfont_old := SelectObject(hdc, hfont_default)
-  VarSetCapacity(default_font_name,65*A_IsUnicode)
-  GetTextFace(hdc, 65 - 1, &default_font_name)
-  VarSetCapacity(default_font_name,-1)
+  default_font_name:=BufferAlloc(65*A_IsUnicode)
+  GetTextFace(hdc, 65 - 1, default_font_name.Ptr)
+  default_font_name:=StrGet(deffault_font_name)
   GetTextMetrics(hdc, tm[])
   default_gui_font_height := tm.tmHeight
 

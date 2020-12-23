@@ -1,8 +1,11 @@
+;
+; File encoding:  UTF-8 with BOM
+;
 
 class VersionRes
 {
 	Name := ""
-	,Data := BufferAlloc(0)
+	,Data := ""
 	,IsText := true
 	,DataSize := 0
 	,Children := []
@@ -12,31 +15,38 @@ class VersionRes
 		if !addr
 			return this
 		
-		wLength := NumGet(addr, "UShort"), addrLimit := addr + wLength, addr += 2
-		,wValueLength := NumGet(addr, "UShort"), addr += 2
-		,wType := NumGet(addr, "UShort"), addr += 2
-		,szKey := StrGet(addr), addr += 2*(StrLen(szKey)+1), addr := (addr+3)&~3
-		,wValueLength ? (this.Data.size := wValueLength*(wType+1)) : 0
+		wLength := NumGet(addr+0, "UShort"), addrLimit := addr + wLength, addr += 2
+		,wValueLength := NumGet(addr+0, "UShort"), addr += 2
+		,wType := NumGet(addr+0, "UShort"), addr += 2
+		,szKey := StrGet(addr, "UTF-16"), addr += 2*(StrLen(szKey)+1), addr := (addr+3)&~3
+		,ObjSetCapacity(this, "Data", size := wValueLength*(wType+1))
 		,this.Name := szKey
 		,this.DataSize := wValueLength
 		,this.IsText := wType
-		,DllCall("msvcrt\memcpy", "ptr", this.Data, "ptr", addr, "ptr", this.Data.size, "cdecl"), addr += this.Data.size, addr := (addr+3)&~3
+		,DllCall("msvcrt\memcpy", "ptr", this.GetDataAddr(), "ptr", addr, "ptr", size, "cdecl"), addr += size, addr := (addr+3)&~3
+		; if wType
+			; ObjSetCapacity(this, "Data", -1)
 		while addr < addrLimit
 		{
-			size := (NumGet(addr, "UShort") + 3) & ~3
-			,this.Children.Push(VersionRes.new(addr))
+			size := (NumGet(addr+0, "UShort") + 3) & ~3
+			,this.Children.Insert(new VersionRes(addr))
 			,addr += size
 		}
 	}
 	
+	_NewEnum()
+	{
+		return this.Children._NewEnum()
+	}
+	
 	AddChild(node)
 	{
-		this.Children.Push(node)
+		this.Children.Insert(node)
 	}
 	
 	GetChild(name)
 	{
-		for k,v in this.children
+		for k,v in this
 			if v.Name = name
 				return v
 	}
@@ -49,32 +59,31 @@ class VersionRes
 	
 	SetText(txt)
 	{
-		size:=this.Data.size:=2*(StrLen(txt)+1)
-		DllCall("msvcrt\memcpy","ptr",this.Data,"ptr", &txt, "ptr", size, "cdecl")
-		,this.IsText := true
-		,this.DataSize := size
+		this.Data := txt
+		this.IsText := true
+		,this.DataSize := StrLen(txt)+1
 	}
 	
 	GetDataAddr()
 	{
-		return this.Data.ptr
+		return ObjGetAddress(this, "Data")
 	}
 	
 	Save(addr)
 	{
 		orgAddr := addr
 		,addr += 2
-		,NumPut(ds:=this.DataSize, addr, "UShort"), addr += 2
-		,NumPut(it:=this.IsText, addr, "UShort"), addr += 2
-		,addr += 2*StrPut(this.Name, addr, "UTF-16")
+		,NumPut(ds:=this.DataSize, addr+0, "UShort"), addr += 2
+		,NumPut(it:=this.IsText, addr+0, "UShort"), addr += 2
+		,addr += 2*StrPut(this.Name, addr+0, "UTF-16")
 		,addr := (addr+3)&~3
 		,realSize := ds*(it+1)
-		,DllCall("msvcrt\memcpy", "ptr", addr, "ptr", this.Data, "ptr", realSize, "cdecl"), addr += realSize
+		,DllCall("msvcrt\memcpy", "ptr", addr, "ptr", this.GetDataAddr(), "ptr", realSize, "cdecl"), addr += realSize
 		,addr := (addr+3)&~3
-		for k,v in this.children
+		for k,v in this
 			addr += v.Save(addr)
 		size := addr - orgAddr
-		,NumPut(size, orgAddr, "UShort")
+		,NumPut(size, orgAddr+0, "UShort")
 		return size
 	}
 }

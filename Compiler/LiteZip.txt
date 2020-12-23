@@ -1,0 +1,171 @@
+LiteZip/LiteUnzip: http://www.codeproject.com/Articles/13370/LiteZip-and-LiteUnzip
+
+
+
+LiteZip.dll and LiteUnzip.dll are two Win32 Dynamic Link libraries. The former has functions to create a ZIP archive (i.e., compress numerous files into a ZIP file). The latter has functions to extract the contents of a ZIP archive.
+
+This project is largely based upon work by Lucian Wischik, who in turn based his work on gzip 1.1.4, zlib, and info-zip which are by Jean-Loup Gailly and Mark Adler. Lucian's code has been reworked to be written in plain C, using only the Win32 API, and packaged into 2 DLLs. (Also some improvements to error-checking, some added functionality, and code-reduction/stream-lining was accomplished.)
+
+The primary benefits of these 2 DLLs are as follows:
+
+You can unzip (extract the contents) from a zip archive that's in a diskfile, memory-buffer, or pipe. And, you can unzip those contents into a diskfile, memory-buffer, pipe, or even a combination of the preceding.
+The same applies to creating a zip archive. You can create the zip archive on disk, in memory, or to a pipe. And, the contents of this zip archive can come from diskfiles, memory-buffers, pipes, or even a combination of any/all of the preceding.
+
+Given this flexibility, you're not required to write out your files to a temporary directory before using them. One noteworthy feature is that you can unzip directly from an embedded resource into a memory buffer or into a diskfile, which is great for installers. Another useful feature is the ability to create your zip in dynamically growable memory backed by the system pagefile (i.e., you don't need to guess the allocation size of a memory buffer before zipping some stuff into that memory buffer. You can let the DLL grow the memory buffer on-the-fly, as needed, on your behalf).
+
+The zip and unzip functions are each in their own DLLs. So for example, if you need only to extract files from a ZIP archive, but not create ZIP archives, then you can use only LiteUnzip.dll and do not need to waste resources for code that you don't need (in LiteZip.dll).
+The DLLs can be used by any program written in any language (that can load and call a standard DLL). This includes C or C++ compiled code, Visual Basic, etc. Although the source code for the DLLs is written in plain C, the compiled DLLs are included for those people who just want to use the DLLs with any language. A text file (Vb.txt) is supplied with function definitions to use the DLLs from Visual Basic.
+And an update to the DLL means that all programs using it automatically obtain the update without needing to be recompiled.
+
+The DLLs themselves have a small footprint. For example, LiteZip.dll is only around 40K. One copy of a DLL's code can be shared among many running programs. Read-only data in the DLL is also shared (i.e., some of the large "lookup tables"). On systems with limited memory, this can be a valuable feature.
+The DLLs support password-based zip encryption.
+The one set of DLLs support both Unicode and ANSI strings. You don't need separate DLLs for Unicode versus ANSI, nor do you need to recompile the DLLs.
+The DLLs should work under all versions of Windows, including CE.
+All human readable strings are in each DLL's resources, facilitating the easy creation of non-English language versions of these DLLs.
+The DLLs also support reading and writing GZIP format (single file only -- not a tar ball).
+The limitation of these DLLs is:
+
+They don't support disk-spanning
+Using the Code in a C/C++ Program
+To allow your C/C++ code to create a zip archive, add the file litezip.lib to your project, and #include "LiteZip.h" to your source code.
+
+To allow your C/C++ code to unzip an archive, add the file liteunzip.lib to the project and #include "LiteUnzip.h" to your source code.
+
+Zip and unzip can co-exist happily in a single application. Or, you can use only the one you need if you're trying to reduce size.
+
+Of course, you must distribute LiteZip.dll and/or LiteUnzip.dll with your application.
+
+The following code snippets show how to use zip/unzip. They use ANSI, but #define'ing UNICODE will use the Unicode version of the functions instead. Error checking has been omitted for brevity.
+
+Example 1 - Create a zipfile (on disk) from Existing Files
+
+To take some existing files on disk, and create a zip archive on disk, do the following:
+
+Call ZipCreateFile. You pass a handle to where you wish ZipCreateFile to supply an HZIP to you. You do not need to know the particulars of this handle. You'll simply pass it to other functions in LiteZip.dll just like you may pass a CreateFile() handle to ReadFile(). You also pass the filename for the zip archive you would like to create on disk. The name can include the full path such as "C:\My Directory\MyArchive.zip". If you wish to use encryption, you also pass the password string. If not using encryption, pass a 0 instead.
+If successful, ZipCreateFile will create an (empty) zip archive on disk, and fill in your HZIP handle.
+
+Call ZipAddFile for each file you wish to add to the zip archive. You'll pass the HZIP handle supplied to you by ZipCreateFile, the filename of the file to be added to the archive, and the name you wish it to have inside of the zip archive. (You may wish to trim off some of the directories on the latter name if you want a relative directory hierarchy in the zip. Or you may wish to prepend directory names to create some directory hierarchy within the zip archive.)
+After you're done adding items to the zip archive, call ZipClose to finish up. You'll pass the HZIP handle supplied to you by ZipCreateFile.
+Here's an example of the above. Assume that we have two files on disk, named "simple.bmp" and "simple.txt". We wish to zip them up into a zip archive named "simple1.zip".
+
+ Collapse | Copy Code
+#include <Windows.h>
+#include "LiteZip.h"
+
+HZIP hz;
+
+ZipCreateFile(&hz, "simple1.zip", 0);
+ZipAddFile(hz, "simple.bmp");
+ZipAddFile(hz, "simple.txt");
+ZipClose(hz);
+The downloaded example zip file contains a similar example, with error-checking, and also dynamic linking to LiteZip.dll. (With dynamic linking, you don't add LiteZip.lib to your project. And LiteZip.dll is not loaded when your app first starts. It is loaded only when you call LoadLibrary).
+
+Example 2 - Unzip a zipfile (on disk) to Files on Disk
+
+To take a zip archive on disk, and unzip its contents to disk, do the following:
+
+Call UnzipOpenFile. You pass a handle to where you wish UnzipOpenFile to supply an HUNZIP to you. You do not need to know the particulars of this handle. You'll simply pass it to other functions in LiteUnzip.dll. You also pass the filename for the zip archive you would like to unzip. The name can include the full path. If the zip is encrypted. you also pass the needed password string. If not using encryption, pass a 0 instead.
+If successful, UnzipOpenFile will open the zip archive on disk, and fill in your HUNZIP handle.
+
+Call UnzipGetItem to determine how many items (files) are in the zip archive. You supply a ZIPENTRY struct to UnzipGetItem. (This is defined in LiteUnzip.h). You can allocate this struct using a memory function such as malloc, or declare it on the stack, or declare it as a global variable, etc. (If you allocate it, you're responsible for freeing it). Set the ZIPENTRY's Index field to -1 before you pass it to UnzipGetItem. You'll also pass the HUNZIP handle supplied to you by UnzipOpenFile.
+UnzipGetItem will set the ZIPENTRY's Index field to how many items are inside the zip archive.
+
+Loop around calls to UnzipGetItem and UnzipItemToFile to extract each item from the archive, and save it on disk.
+To extract an item, you first set the ZIPENTRY's Index field to which item you wish to extract (where 0 is the first item, 1 is the second item, 2 is the third item, etc.).
+
+Pass your ZIPENTRY, and the HUNZIP handle supplied by UnzipOpenFile, to UnzipGetItem. UnzipGetItem will fill in the ZIPENTRY with information about that item. This includes its name, its uncompressed size, its modification date, etc. If you want to extract only a particular item, rather than calling UnzipGetItem, you can fill in your ZIPENTRY's Name field with the desired item's name, and pass your ZIPENTRY to UnzipFindItem to fill in your ZIPENTRY with other information about that item.
+
+Finally, call UnzipItemToFile to extract that item to a disk file. Pass your ZIPENTRY, the HUNZIP handle supplied by UnzipOpenFile, and the filename you wish the item to be saved to. (You can use the ZIPENTRY's Name field if you want to use the same name it had within the archive). UnzipItemToFile will extract the item and save it to disk, creating any needed directories.
+
+After you're done extracting items from the zip archive, call UnzipClose to finish up. You'll pass the HUNZIP handle supplied to you by ZipOpenFile.
+Here's an example of the above. Assume that we have a zip archive on disk named "simple1.zip". We'll extract all its items, using the same filenames as within the archive. No encryption is used.
+
+ Collapse | Copy Code
+#include <Windows.h>
+#include "LiteUnzip.h"
+
+HUNZIP   huz;
+ZIPENTRY ze;
+DWORD    numitems;
+
+ZipOpenFile(&huz, "simple1.zip", 0);
+
+ze.Index = (DWORD)-1;
+UnzipGetItem(huz, &ze);
+numitems = ze.Index;
+
+for (ze.Index = >0; ze.Index < numitems; ze.Index++)
+{
+   UnzipGetItem(huz, &ze);
+   UnzipItemToFile(huz, ze.Name, &ze);
+}
+
+UnzipClose(huz);
+The downloaded example UnzipFile contains a similar example, with error-checking, and also dynamic linking to LiteUnzip.dll. (With dynamic linking, you don't add LiteUnzip.lib to your project. And LiteUnzip.dll is not loaded when your app first starts. It is loaded only when you call LoadLibrary).
+
+Here's an example of extracting only the item named "readme.txt" from the same zip archive:
+
+ Collapse | Copy Code
+HUNZIP   huz;
+ZIPENTRY ze;
+
+ZipOpenFile(&huz, "simple1.zip", 0);
+lstrcpy(ze.name, "readme.txt");
+UnzipFindItem(huz, &ze, 0); // Pass a 1 for case-insensitive find
+UnzipItemToFile(huz, ze.Name, &ze);
+UnzipClose(huz);
+Example 3- Unzip from Resource Directly into Memory
+
+This technique is useful for small games, where you want to keep all data files bundled up inside the executable, but reduce their size by zipping them first. It may also be useful for an installer, where the files to be installed are zipped into an archive that is embedded in the installer EXE's resource.
+
+Assume our project has a .RC file with the line
+
+ Collapse | Copy Code
+1 RCDATA "file.zip"
+to embed the zipfile as a resource. Let's also assume that this zip archive contains an item named "sample.jpg", and we wish to unzip that one item into a memory buffer.
+
+The technique is very similar to the above unzip example, except:
+
+We call UnzipOpenBuffer instead of UnzipOpenFile. After all, the zip archive is not a separate zip file on disk. Rather, it is part of our EXE's resources. The third arg is the resource id number. We used the number 1 in our RCDATA statement above.
+We call UnzipItemToBuffer instead of UnzipItemToFile. After all, we want to unzip the item to a memory buffer we create, rather than a file on disk. Note that UnzipFindItem fills in the ZIPENTRY's UncompressedSize field with the size of the buffer we'll need. So we allocate that with GlobalAlloc (or in C++, you can use new).
+ Collapse | Copy Code
+  HUNZIP   huz;
+  ZIPENTRY ze;
+  char     *buffer;
+
+  UnzipOpenBuffer(&huz, 0, 1, 0)
+
+  lstrcpy(ze.name, "sample.jpg");
+  UnzipFindItem(huz, &ze, 0);
+
+  buffer = (char *)GlobalAlloc(GMEM_FIXED, ze.UncompressedSize);
+
+  UnzipItemToBuffer(huz, buffer, ze.UncompressedSize, &ze)
+
+  UnzipClose(huz);
+  
+  // Here you would do something with the contents of buffer.
+
+  GlobalFree(buffer);
+The downloaded example UnzipResource shows how an installer EXE may unzip the entire contents of an archive embedded in its resources.
+
+Other Examples
+
+You can also zip up some existing file into an archive that is created in a memory buffer. You can either supply your own memory buffer (and make sure it's big enough to accommodate the resulting archive), or you can simply let LiteZip.dll allocate the buffer from system paged memory. In the latter case, the DLL can automatically grow the buffer on-the-fly as needed.
+
+Furthermore, you can add the contents of some memory buffer.
+
+The downloaded example ZipMemory shows the zipping the contents of a memory buffers into an archive created in memory. The example lets the DLL allocate system paged memory for the resulting archive. It's similar to the zip example above except:
+
+We call zipCreateBuffer instead of ZipCreateFile. After all, the zip archive is not going to be created on disk. Rather, it is going to be created in memory. The third arg is the maximum limit to the growable size. You can make this a very large number because memory will be only reserved, but not actually committed, until needed.
+We call ZipAddBuffer instead of ZipAddFile. After all, we want to zip up a memory buffer's contents rather than some existing file on disk.
+Because we let the DLL allocate growable memory, rather than supplying our own buffer, we have to call ZipGetMemory to retrieve the buffer that the DLL creates the zip archive in. We don't need to call ZipClose because ZipGetMemory does that for us. We're also responsible for freeing that memory.
+Sometimes, you may need to zip up some data with the resulting archive not having a ZIP header, nor ZIP "central directory" in it. I'll refer to this as a "raw" zip. For example, this is the case with a compressed ID3 tag. For this purpose, LiteZip offers a few functions to add data to a raw archive: ZipAddFileRaw, ZipAddHandleRaw, ZipAddPipeRaw, and ZipAddBufferRaw. Only one item can be added to such an archive. To later unzip the data item from this archive, you will need to use one of LiteUnzip's functions to open a raw archive: UnzipOpenFileRaw, UnzipOpenBufferRaw, or nzipOpenHandleRaw. You can then unzip the one item by calling UnzipGetItem, but first you will have to know both the compressed size of the archive, and also the size of the item when it is compressed. You stuff these two values in the ZIPENTRY's CompressedSize and UncompressedSize fields, respectively, before you call UnzipGetItem. The example ZipMemoryRaw shows how to create a raw archive. And the example UnzipMemRaw shows how to extract the one item from that same raw archive.
+
+Updates
+March 11, 2006: Added the function ZipAddDir() to LiteZip.dll to easily zip up the contents of a directory (including the contents of its sub-directories). Also included a new C example, ZipDir, to demonstrate this. 
+NOTE: ZipAddDir does not add empty sub-directories to the zip archive.
+August 8, 2008: Added support for "raw" archives.
+
+License
+This article, along with any associated source code and files, is licensed under The GNU Lesser General Public License (LGPLv3): http://www.opensource.org/licenses/lgpl-3.0.html

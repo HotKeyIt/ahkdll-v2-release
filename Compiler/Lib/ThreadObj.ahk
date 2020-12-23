@@ -1,5 +1,5 @@
 ThreadObj(script,cmdLine:="",title:=""){
-	ThreadID:=NewThread("A_ParentThread:=ObjShare(" ObjShare(ThreadObj_Class()) ")`nNumPut(ObjShare(ThreadObj_Class())," getvar(pObjShare:=0) ",`"PTR`")`nSetEvent(" hEvent:=CreateEvent() ")`n" script,cmdLine,title)
+	ThreadID:=NewThread("A_ParentThread:=ObjShare(" ObjShare(ThreadObj_Class()) ")`nNumPut(`"PTR`",ObjShare(ThreadObj_Class())," getvar(pObjShare:=0) ")`nSetEvent(" hEvent:=CreateEvent() ")`n" script,cmdLine,title)
 	,WaitForSingleObject(hEvent,1000),CloseHandle(hEvent)
 	return pObjShare?ObjShare(pObjShare):""
 }

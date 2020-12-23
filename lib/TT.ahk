@@ -36,15 +36,26 @@
 ; Example:
 ;		file:TT_Example.ahk
 ;
-Class _ToolTipClass{
-  static _:=[] ;all objects
+
+TT(options:="",text:="",title:=""){
+  return TT.new(options, text, title)
+}
+
+Class TT extends Map{
   __New(options:="",text:="",title:=""){
-    static _TOOLINFO:="cbSize,uFlags,PTR hwnd,PTR uId,TT_OnMessage(_RECT) rect,PTR hinst,LPTSTR lpszText,PTR lParam,void *lpReserved",_RECT:="left,top,right,bottom",HWND_TOPMOST:=-1,SWP_NOMOVE:=0x2, SWP_NOSIZE:=0x1, SWP_NOACTIVATE:=0x10
-    Parent:="",Gui:="",ClickTrough:="",Style:="",NOFADE:="",NoAnimate:="",NOPREFIX:="",AlwaysTip:="",ParseLinks:="",CloseButton:="",Balloon:="",maxwidth:=""
-  ,INITIAL:="",AUTOPOP:="",RESHOW:="",OnClick:="",OnClose:="",OnShow:="",ClickHide:="",HWND:="",Center:="",RTL:="",SUB:="",Track:="",Absolute:=""
-  ,TRANSPARENT:="",Color:="",Background:="",icon:=0
-    if (Type(options)="Integer")
-      Parent:=options
+    ; Options
+    ;WS_POPUP=0x80000000,TTS_ALWAYSTIP=0x1,TTS_NOPREFIX=0x2,TTS_USEVISUALSTYLE=0x100,TTS_NOFADE=0x20,TTS_NOANIMATE=0x10
+    static HWND_TOPMOST:=-1,SWP_NOMOVE:=0x2, SWP_NOSIZE:=0x1, SWP_NOACTIVATE:=0x10
+    static _TOOLINFO:="cbSize,uFlags,PTR hwnd,PTR uId,_RECT rect,PTR hinst,LPTSTR lpszText,PTR lParam,void *lpReserved"
+          ,_RECT:="left,top,right,bottom"
+      ;~ static _RECT:="left,top,right,bottom"
+      ;~ static _TOOLINFO:="cbSize,uFlags,PTR hwnd,PTR uId,_RECT rect,PTR hinst,LPTSTR lpszText,PTR lParam,void *lpReserved"
+    ; Objects
+    Parent:="",ClickTrough:="",Style:="",NOFADE:="",NoAnimate:="",NOPREFIX:="",AlwaysTip:="",ParseLinks:="",CloseButton:="",Balloon:="",maxwidth:=""
+    ,INITIAL:="",AUTOPOP:="",RESHOW:="",OnClick:="",OnClose:="",OnShow:="",ClickHide:="",HWND:="",Center:="",RTL:="",SUB:="",Track:="",Absolute:=""
+    ,TRANSPARENT:="",Color:="",Background:="",icon:=0,theme:=""
+    if (IsNumber(options))
+      Parent:=options+0
     else If (options){
       Loop Parse, options,A_Space,A_Space
         If istext {
@@ -52,7 +63,7 @@ Class _ToolTipClass{
             %istext%:=string A_Space SubStr(A_LoopField,1,StrLen(A_LoopField)-1),istext:="",string:=""
           else
             string.= A_Space A_LoopField
-        } else If (A_LoopField ~= "i)AUTOPOP|INITIAL|PARENT|RESHOW|MAXWIDTH|ICON|Color|BackGround|OnClose|OnClick|OnShow|GUI|NOPREFIX|TRACK")
+        } else If (A_LoopField ~= "i)AUTOPOP|INITIAL|PARENT|RESHOW|MAXWIDTH|ICON|Color|BackGround|OnClose|OnClick|OnShow|NOPREFIX|TRACK")
         {
           RegExMatch(A_LoopField,"^(\w+)=?(.*)?$",option)
           If ((Ord(option.2)=39 && SubStr(A_LoopField,-1)!="'") && (istext:=option.1) && (string:=SubStr(option.2,2)))
@@ -65,14 +76,14 @@ Class _ToolTipClass{
         } else if A_LoopField
           %A_LoopField% := 1
     }
-    If ((!Parent || !DllCall("IsWindow","PTR",Parent)) && (!GUI ||!DllCall("IsWindow","PTR",Parent:=GUI)))
+    If !IsNumber(Parent)||!DllCall("IsWindow","PTR",Parent)
       Parent:=A_ScriptHwnd
+    this.hIcons:=Map()
     this.HWND := DllCall("CreateWindowEx", "UInt", (ClickTrough?0x20:0)|0x8, "str", "tooltips_class32", "PTR", 0
            , "UInt",0x80000000|(Style?0x100:0)|(NOFADE?0x20:0)|(NoAnimate?0x10:0)|(NOPREFIX=0?0x0:0x2)|(AlwaysTip?0x1:0)|(ParseLinks?0x1000:0)|(CloseButton?0x80:0)|(Balloon?0x40:0)
            , "int",0x80000000,"int",0x80000000,"int",0x80000000,"int",0x80000000, "PTR",Parent?Parent:0,"PTR",0,"PTR",0,"PTR",0,"PTR")
     ,DllCall("SetWindowPos","PTR",this.HWND,"PTR",HWND_TOPMOST,"Int",0,"Int",0,"Int",0,"Int",0
                              ,"UInt",SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE)
-    ,_ToolTipClass._.Push(this)
     this.SETMAXTIPWIDTH(MAXWIDTH?MAXWIDTH:A_ScreenWidth)
     If !(AUTOPOP INITIAL RESHOW)
       this.SETDELAYTIME()
@@ -81,13 +92,14 @@ Class _ToolTipClass{
     If OnClick
       ParseLinks:=1
     this.rc:=Struct(_RECT) ;for TTM_SetMargin
+    
     ;Tool for Main ToolTip
     ,this.P:=Struct(_TOOLINFO),P:=this.P,P.cbSize:=sizeof(_TOOLINFO)
-    ,P.uFlags:=(HWND?0x1:0)|(Center?0x2:0)|(RTL?0x4:0)|(SUB?0x10:0)|(Track=0?0:0x20)|(Absolute?0x80:0)|(TRANSPARENT?0x100:0)|(ParseLinks?0x1000:0)
-    ,P.hwnd:=Parent
-    ,P.uId:=Parent
-    ,P.lpszText[""]:=this.maintext?&this.maintext:0
-    ,this.AddTool(P[])
+      ,P.uFlags:=(HWND?0x1:0)|(Center?0x2:0)|(RTL?0x4:0)|(SUB?0x10:0)|(Track=0?0:0x20)|(Absolute?0x80:0)|(TRANSPARENT?0x100:0)|(ParseLinks?0x1000:0)
+      ,P.hwnd:=Parent
+      ,P.uId:=Parent
+      ,P.lpszText[""]:=this.maintext?StrPtr(this.maintext):0
+      ,this.AddTool(P[])
     If (Theme)
       this.SETWINDOWTHEME()
     If Color!=""
@@ -97,42 +109,72 @@ Class _ToolTipClass{
     this.SetTitle(this.maintitle:=title,icon)
     If ((this.OnClick:=OnClick)||(this.OnClose:=OnClose)||(this.OnShow:=OnShow))
       this.OnClose:=OnClose,this.OnShow:=OnShow,this.ClickHide:=ClickHide
-	OnMessage(0x4e,A_ScriptHwnd,Func("TT_OnMessage"))
-    Return this
+    OnMessageFunc:=this.GetMethod("Onmessage").Bind(this) 
+    OnMessage(0x4e,A_ScriptHwnd,OnMessageFunc)
   }
-  /*
-  __Delete(){ ;delete all ToolTips (will be executed OnExit)
-    Loop _ToolTipClass._.Length
-    {	  
-      this[i:=A_Index].DelTool(_ToolTipClass._[i].P[])
-      ,DllCall("DestroyWindow","PTR",_ToolTipClass._[i].HWND)
-      for id,tool in _ToolTipClass._[i].T
-        _ToolTipClass._[i].DelTool(tool[])
-      _ToolTipClass._.RemoveAt(i)
-    }
-    this.GetIcon() ;delete ToolTips and Destroy all icon handles
-  }*/
-
+  __Delete(){
+        this.DelTool(this.P[])
+        ,DllCall("DestroyWindow","PTR",this.HWND)
+        if this.HasProp("T")
+          for id,tool in this.T
+            this.DelTool(tool[]),DllCall("DestroyWindow","PTR",Tool.HWND)
+	; delete ToolTips and Destroy all icon handles
+    for file,obj in this.hIcons
+      If IsObject(obj){
+        for icon,handle in obj
+          DllCall("DestroyIcon","PTR",handle)
+      } else 
+        DllCall("DestroyIcon","PTR",obj)
+  }
   Remove(){
-    for id,Tool in _ToolTipClass._
-    {
-      If (this=Tool){
-        _ToolTipClass._[id]:=_ToolTipClass._[_.Length],_ToolTipClass._.RemoveAt(id)
-        for id,tools in Tool.T
-          Tool.DelTool(tools[])
-        Tool.DelTool(Tool.P[])
-        ,DllCall("DestroyWindow","PTR",Tool.HWND)
-        break
-      }
-    }
+	for id,tool in this.T
+      this.DelTool(tool[])
+	  ,DllCall("DestroyWindow","PTR",Tool.HWND)
+      ,this.T.Delete(id)
   }
-
+  OnMessage(wParam,lParam,msg,hwnd){
+    static _NMHDR:="HWND hwndFrom,UINT_PTR idFrom,UINT code"
+          ,_NMTVGETINFOTIP:="_NMHDR hdr,UINT uFlags,UInt link"
+    static TTN_FIRST:=0xfffffdf8
+          ,HDR:=Struct(_NMTVGETINFOTIP)
+    HDR[]:=lParam
+    If !InStr(".1.2.3.","." (m:= TTN_FIRST-HDR.hdr.code) ".")
+      Return
+    p:=HDR.hdr.hwndFrom
+    ;~ for id,T in _
+      ;~ If (p=this.HWND)
+        ;~ break
+    if (p!=this.hwnd)
+      return
+    ;~ for id,object in _
+      ;~ If (p=object.hwnd && T:=object)
+        ;~ break
+    text:=this.fulltext
+    If (m=1){ 							;Show
+      If IsFunc(this.OnShow)
+        this.OnShow("")
+    } else If (m=2){ 					;Close
+      If IsFunc(this.OnClose)
+        this.OnClose("")
+      this.TRACKACTIVATE(0,this.P[])
+    } else If InStr(text,"<a"){	;Click
+      If this.ClickHide
+        this.TRACKACTIVATE(0,this.P[])
+      If (SubStr(LTrim(text:=SubStr(text,InStr(text,"<a",0,1,HDR.link+1)+2)),1,1)=">")
+        action:=SubStr(text,InStr(text,">")+1,InStr(text,"</a>")-InStr(text,">")-1)
+      else action:=Trim(action:=SubStr(text,1,InStr(text,">")-1))
+      If IsFunc(this.OnClick)
+        this.OnClick(action)
+    }
+    Return true
+  }
   ADD(Control,Text:="",uFlags:="",Parent:=""){
-    static _TOOLINFO:="cbSize,uFlags,PTR hwnd,PTR uId,TT_OnMessage(_RECT) rect,PTR hinst,LPTSTR lpszText,PTR lParam,void *lpReserved"
+    static _TOOLINFO:="cbSize,uFlags,PTR hwnd,PTR uId,_RECT rect,PTR hinst,LPTSTR lpszText,PTR lParam,void *lpReserved"
+          ,_RECT:="left,top,right,bottom"
     ;	uFlags http://msdn.microsoft.com/en-us/library/bb760256.aspx
     ; TTF_ABSOLUTE=0x80, TTF_CENTERTIP=0x0002, TTF_IDISHWND=0x1, TTF_PARSELINKS=0x1000 ,TTF_RTLREADING = 0x4
     ; TTF_SUBCLASS=0x10, TTF_TRAMsgCK=0x20, TTF_TRANSPARENT=0x100
-    ;~  _TOOLINFO:="cbSize,uFlags,PTR hwnd,PTR uId,_RECT rect,PTR hinst,LPTSTR lpszText,PTR lParam,void *lpReserved"
+      ;~  _TOOLINFO:="cbSize,uFlags,PTR hwnd,PTR uId,_RECT rect,PTR hinst,LPTSTR lpszText,PTR lParam,void *lpReserved"
     DetectHiddenWindows:=A_DetectHiddenWindows
     DetectHiddenWindows "On"
     if (Parent){
@@ -140,12 +182,10 @@ Class _ToolTipClass{
         ; Gui %Parent%:+LastFound
         Parent:=A_ScriptHwnd
       }
-      if !this.HasOwnProp("T")
-        this.T:=Map()
-      this.T[Abs(Parent)]:=Tool:=Struct(_TOOLINFO)
+      this.T:=Map(),this.T[Abs(Parent)]:=Tool:=Struct(_TOOLINFO)
       ,Tool.uId:=Parent,Tool.hwnd:=Parent,Tool.uFlags:=(0|16)
-      ,DllCall("GetClientRect","PTR",this.HWND,"PTR", this.%Abs(Parent)%.rect[""])
-      ,this.ADDTOOL(T["T",Abs(Parent)][])
+      ,DllCall("GetClientRect","PTR",this.HWND,"PTR", this.T[Abs(Parent)].rect[])
+      ,this.ADDTOOL(this.T[Abs(Parent)][])
     }
     If (text="")
       text:=ControlGetText(Control,"ahk_id " (Parent?Parent:this.P.hwnd))
@@ -154,30 +194,28 @@ Class _ToolTipClass{
     If uFlags
       If (Type(uFlags+0)!="Integer")
       {
+        HWND:=Center:=RTL:=SUB:=Track:=Absolute:=Transparent:=ParseLinks:=""
         Loop Parse,uflags,A_Space,A_Space
           If A_LoopField
             %A_LoopField% := 1
-        uFlags:=(HWND?0x1:HWND=""?0x1:0)|(Center?0x2:0)|(RTL?0x4:0)|(SUB?0x10:0)|(Track?0x20:0)|(Absolute?0x80:0)|(TRANSPARENT?0x100:0)|(ParseLinks?0x1000:0)
+        uFlags:=(HWND||HWND=""?0x1:0)|(Center?0x2:0)|(RTL?0x4:0)|(SUB?0x10:0)|(Track?0x20:0)|(Absolute?0x80:0)|(TRANSPARENT?0x100:0)|(ParseLinks?0x1000:0)
       }
-    if !this.HasOwnProp("T")
-      this.T:=Map()
-    Tool:=this.T[Abs(Control)]:=Struct(_TOOLINFO)
-    ,Tool.cbSize:=sizeof(_TOOLINFO)
-    ,Tool.lpszText:=RegExReplace(text,"<a\K[^<]*?>",">")
+    this["T"]:=Map(),Tool:=this["T"][Abs(Control)]:=Struct(_TOOLINFO)
+    ,Tool.cbSize:=sizeof(_TOOLINFO),this[Abs(Control)]:=Map()
+    ,this[Abs(Control)]["text"]:=RegExReplace(text,"<a\K[^<]*?>",">")
     ,Tool.uId:=Control,Tool.hwnd:=Parent?Parent:this.P.hwnd,Tool.uFlags:=uFlags?(uFlags|16):(1|16)
-    ,DllCall("GetClientRect","PTR",this.HWND,"PTR",Tool.rect[""])
+    ,Tool.lpszText[""]:=StrPtr(this[Abs(Control)]["text"])
+    ,DllCall("GetClientRect","PTR",this.HWND,"PTR",Tool.rect[])
     this.ADDTOOL(Tool[])
     DetectHiddenWindows DetectHiddenWindows
   }
-
   DEL(Control){
     If !Control
       Return 0
     If (Type(Control+0)!="Integer")
       Control:=ControlGetHwnd(Control, "ahk_id " this.P.hwnd)
-     This.DELTOOL(This.T[Abs(Control)][]),this.T.Delete(Abs(Control))
+     this.DELTOOL(this.T[Abs(Control)][]),this.T.Delete(Abs(Control))
   }
-
   Color(Color:="",Background:=""){
     static TTM_SETTIPBKCOLOR:=0x413,TTM_SETTIPTEXTCOLOR:=0x414
       ,Black:=0x000000,Green:=0x008000,Silver:=0xC0C0C0,Lime:=0x00FF00,Gray:=0x808080,Olive:=0x808000
@@ -188,28 +226,88 @@ Class _ToolTipClass{
     If (BackGround!="")
       this.SETTIPBKCOLOR(BackGround)
   }
-
   Text(text){
-    static TTM_UPDATETIPTEXT:=0x400+(A_IsUnicode?57:12),TTM_UPDATE:=0x400+29
-    this.fulltext:=text,this.maintext:=RegExReplace(text,"<a\K[^<]*?>",">"),this.P.lpszText[""]:=text!=""?&this.maintext:0
+    static TTM_UPDATETIPTEXT:=0x400+57,TTM_UPDATE:=0x400+29
+      this.fulltext:=text,this.maintext:=RegExReplace(text,"<a\K[^<]*?>",">"),this.P.lpszText[""]:=text!=""?StrPtr(this.maintext):0
     ,this.UPDATETIPTEXT()
   }
-  Icon(icon:=0,icon_:=1,default:=1){
-     static TTM_SETTITLE := 0x400 + (A_IsUnicode ? 33 : 32)
-    If icon
-      If (Type(icon+0)!="Integer")
-        If !icon:=TT_GetIcon(icon,icon_)
-          icon:=default
-     Return (DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_SETTITLE,"PTR",icon+0,"PTR",&this.maintitle,"PTR"),this.UPDATE())
+ Icon(icon:=0,icon_:=1,default:=1){
+   static TTM_SETTITLE := 0x400 + 33
+   If icon
+     If (Type(icon+0)!="Integer")
+       If !icon:=this.GetIcon(icon,icon_)
+        icon:=default
+     Return (DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_SETTITLE,"PTR",icon+0,"PTR",StrPtr(this.maintitle),"PTR"),this.UPDATE())
   }
-
+  GetIcon(File:="",Icon_:=1){
+    static _ICONINFO:="fIcon,xHotspot,yHotSpot,HBITMAP hbmMask,HBITMAP hbmColor"
+          ,_SHFILEINFO:="HICON hIcon,iIcon,DWORD dwAttributes,TCHAR szDisplayName[260],TCHAR szTypeName[80]"
+    static pToken:=0,temp1:=DllCall( "LoadLibrary", "Str","gdiplus","PTR"),si:=BufferAlloc(16, 0), temp2:=NumPut("Char",1,si)&&DllCall("gdiplus\GdiplusStartup", "PTR*",pToken, "PTR",si.Ptr, "PTR",0)
+      ;~ static _ICONINFO:="fIcon,xHotspot,yHotSpot,HBITMAP hbmMask,HBITMAP hbmColor"
+      ;~ static _SHFILEINFO:="HICON hIcon,iIcon,DWORD dwAttributes,TCHAR szDisplayName[260],TCHAR szTypeName[80]"
+    static sfi:=Struct(_SHFILEINFO),sfi_size:=sizeof(_SHFILEINFO),SmallIconSize:=DllCall("GetSystemMetrics","Int",49)
+    If CR:=InStr(File,"`r") || LF:=InStr(File,"`n")
+        File:=SubStr(file,1,CR<LF?CR-1:LF-1) ; this is a local parameter so we can change the memory 
+    If this.hIcons.Has(file)&&IsObject(this.hIcons[File])&&this.hIcons[File,Icon_]
+      Return this.hIcons[file,Icon_] 
+    else if (this.hIcons.Has(File) && !IsObject(this.hIcons[File]))
+      return this.hIcons[File]
+    SplitPath(File,,,Ext)
+    if (this.hIcons.Has(Ext) && !IsObject(this.hIcons[Ext]))
+      return this.hIcons[Ext]
+    else If (ext = "cur")
+      Return this.hIcons[file][Icon_]:=DllCall("LoadImageW", "PTR", 0, "str", File, "uint", ext="cur"?2:1, "int", 0, "int", 0, "uint", 0x10,"PTR")
+    else if InStr(",EXE,ICO,DLL,LNK,","," Ext ","){
+      If (ext="LNK"){
+         FileGetShortcut(File,Fileto,,,,FileIcon,FileIcon_)
+         File:=!FileIcon ? FileTo : FileIcon
+      }
+      SplitPath(File,,,Ext)
+      DllCall("PrivateExtractIcons", "Str", File, "Int", Icon_-1, "Int", SmallIconSize, "Int", SmallIconSize, "PTR*", Icon:=0, "PTR*", 0, "UInt", 1, "UInt", 0, "Int")
+      if !this.hIcons.Has(file)
+        this.hIcons[file]:=Map()
+      Return this.hIcons[File][Icon_]:=Icon
+    } else if (Icon_=""){
+      If !FileExist(File){ 
+        if RegExMatch(File,"^[0-9A-Fa-f]+$") ;assume Hex string
+        {
+          nSize := StrLen(File)//2
+          Buffer:=BufferAlloc( nSize ) 
+          Loop nSize
+            NumPut("Char", "0x" . SubStr(File,2*A_Index-1,2), Buffer, A_Index-1)
+        } else Return
+      } else {
+        nSize:=FileGetSize(file)
+        Buffer:=FileRead(file,"RAW")
+      }
+      hData := DllCall("GlobalAlloc", "UInt",2, "UInt", nSize,"PTR")
+      ,pData := DllCall("GlobalLock", "PTR",hData,"PTR")
+      ,DllCall( "RtlMoveMemory", "PTR",pData, "PTR",Buffer.Ptr, "UInt",nSize )
+      ,DllCall( "GlobalUnlock", "PTR",hData )
+      ,DllCall( "ole32\CreateStreamOnHGlobal", "PTR",hData, "Int",True, "PTR*",pStream:=0 )
+      ,DllCall( "gdiplus\GdipCreateBitmapFromStream", "UInt",pStream, "PTR*",pBitmap:=0 )
+      ,DllCall( "gdiplus\GdipCreateHBITMAPFromBitmap", "PTR",pBitmap, "PTR*",hBitmap:=0, "UInt",0 )
+      ,DllCall( "gdiplus\GdipDisposeImage", "PTR",pBitmap )
+      ,ii:=Struct(_ICONINFO)
+      ,ii.ficon:=1,ii.hbmMask:=hBitmap,ii.hbmColor:=hBitmap
+      return this.hIcons[File]:=DllCall("CreateIconIndirect","PTR",ii[],"PTR")
+    } else If DllCall("Shell32\SHGetFileInfoW", "str", File, "uint", 0, "PTR", sfi[], "uint", sfi_size, "uint", 0x101,"PTR")
+        Return this.hIcons[Ext] := sfi.hIcon
+  }
   Close(){
     this.text("")
   }
-
   Show(text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
-    static _TBBUTTON:="iBitmap,idCommand,BYTE fsState,BYTE fsStyle,BYTE bReserved[" (A_Is64bitOS?6:2) "],DWORD_PTR dwData,INT_PTR iString",_BITMAP:="LONG bmType,LONG bmWidth,LONG bmHeight,LONG bmWidthBytes,WORD bmPlanes,WORD bmBitsPixel,LPVOID bmBits",_ICONINFO:="fIcon,xHotspot,yHotSpot,HBITMAP hbmMask,HBITMAP hbmColor",_CURSORINFO:="cbSize,flags,HCURSOR hCursor,Int x,y",_RECT:="left,top,right,bottom"
-    ,pcursor:= Struct(_CURSORINFO),init:=(pcursor.cbSize:=sizeof(_CURSORINFO))
+    static _RECT:="left,top,right,bottom"
+          ,_CURSORINFO:="cbSize,flags,HCURSOR hCursor,Int x,y"
+          ,_ICONINFO:="fIcon,xHotspot,yHotSpot,HBITMAP hbmMask,HBITMAP hbmColor"
+          ,_BITMAP:="LONG bmType,LONG bmWidth,LONG bmHeight,LONG bmWidthBytes,WORD bmPlanes,WORD bmBitsPixel,LPVOID bmBits"
+          ,_TBBUTTON:="iBitmap,idCommand,BYTE fsState,BYTE fsStyle,BYTE bReserved[" (A_Is64bitOS?6:2) "],DWORD_PTR dwData,INT_PTR iString"
+    ;~ static _TBBUTTON:="iBitmap,idCommand,BYTE fsState,BYTE fsStyle,BYTE bReserved[" (A_PtrSize=8?6:2) "],DWORD_PTR dwData,INT_PTR iString"
+      ;~ static _BITMAP:="LONG bmType,LONG bmWidth,LONG bmHeight,LONG bmWidthBytes,WORD bmPlanes,WORD bmBitsPixel,LPVOID bmBits"
+      ;~ static _ICONINFO:="fIcon,xHotspot,yHotSpot,HBITMAP hbmMask,HBITMAP hbmColor"
+      ;~ static _CURSORINFO:="cbSize,flags,HCURSOR hCursor,x,y"
+    static pcursor:= Struct(_CURSORINFO),init:=(pcursor.cbSize:=sizeof(_CURSORINFO))
           ,picon:=Struct(_ICONINFO) ,pbitmap:=Struct(_BITMAP)
           ,TB:=Struct(_TBBUTTON) ,RC:=Struct(_RECT)
     xo:=0,xs:=0,yo:=0,ys:=0
@@ -219,7 +317,7 @@ Class _ToolTipClass{
       this.SETTITLE(title,icon,icon_,defaulticon)
     If (x="TrayIcon" || y="TrayIcon"){
       DetectHiddenWindows (DetectHiddenWindows:=A_DetectHiddenWindows ? "On" : "On")
-      ; WinGetPid,PID,ahk_id %A_ScriptHwnd%
+          ; WinGetPid,PID,ahk_id %A_ScriptHwnd%
       PID:=DllCall("GetCurrentProcessId")
       hWndTray:=DllCall("FindWindow","Str","Shell_TrayWnd", "PTR", 0)
       for k,ToolbarWindow in WinGetControls("ahk_id " hWndTray)
@@ -231,14 +329,14 @@ Class _ToolTipClass{
       procpid:=WinGetPid("ahk_id " hWndToolBar)
       hProc   := DllCall( "OpenProcess", "uint", 0x38, "int", 0, "uint", procpid,"PTR") ;0x38 = PROCESS_VM_OPERATION+READ+WRITE
       ,bufAdr  := DllCall( "VirtualAllocEx", "PTR", hProc, "PTR", 0, "uint", sizeof(TB), "uint", MEM_COMMIT:=0x1000, "uint", PAGE_READWRITE:=0x4,"PTR")
-    Loop max:=DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x418,"PTR",0,"PTR",0,"PTR")
+      Loop max:=DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x418,"PTR",0,"PTR",0,"PTR")
       {
         i:=max-A_Index
         DllCall("SendMessage","PTR",hWndToolBar,"UInt",0x417,"PTR",i,"PTR",bufAdr,"PTR")
         ,DllCall("ReadProcessMemory", "PTR", hProc, "PTR", bufAdr, "PTR", TB[], "ptr", sizeof(TB), "ptr", 0)
         ,DllCall("ReadProcessMemory", "PTR", hProc, "PTR", TB.dwData, "PTR", RC[], "PTR", 8, "PTR", 0)
-      BWPID:=WinGetPID("ahk_id " NumGet(RC[],0,"PTR"))
-      If (BWPID!=PID)
+        BWPID:=WinGetPID("ahk_id " NumGet(RC[],0,"PTR"))
+        If (BWPID!=PID)
           continue
         If (TB.fsState>7){
           ControlGetPos xc,yc,xw,yw,"Button2","ahk_id " hWndTray
@@ -326,22 +424,22 @@ Class _ToolTipClass{
     ; ControlFocus,,% "ahk_id " this.hwnd
   }
 
-  Set(option:="",OnOff:=1){
+  __Call(option:="",OnOff:=1){
     static Style:=0x100,NOFADE:=0x20,NoAnimate:=0x10,NOPREFIX:=0x2,AlwaysTip:=0x1,ParseLinks:=0x1000,CloseButton:=0x80,Balloon:=0x40,ClickTrough:=0x20
     If (option ~="i)Style|NOFADE|NoAnimate|NOPREFIX|AlwaysTip|ParseLinks|CloseButton|Balloon"){
       If ((opt:=DllCall("GetWindowLong","PTR",this.HWND,"UInt",-16) & %option%) && !OnOff) || (!opt && OnOff)
         DllCall("SetWindowLong","PTR",this.HWND,"UInt",-16,"UInt",DllCall("GetWindowLong","PTR",this.HWND,"UInt",-16)+(OnOff?(%option%):(-%option%)))
-    this.Update()
+      this.Update()
     } else If (option="ClickTrough"){
       If ((opt:=DllCall("GetWindowLong","PTR",this.HWND,"UInt",-20) & %option%) && !OnOff) || (!opt && OnOff)
         DllCall("SetWindowLong","PTR",this.HWND,"UInt",-20,"UInt",DllCall("GetWindowLong","PTR",this.HWND,"UInt",-20)+(OnOff?(%option%):(-%option%)))
-    this.Update()
-    } else if !InStr(",__Delete,Push,Pop,InsertAt,Remove,RemoveAt,GetCapacity,SetCapacity,GetAddress,Length,_NewEnum,NewEnum,HasKey,Clone,Count,","," option ",")
+      this.Update()
+    } else if !InStr(",__Delete,Delete,Capacity,Length,__Enum,__Item,Set,Has,Clear,Clone,Count,CaseSense,","," option ",")
       MsgBox "Invalid option: " option
   }
 
   Font(pFont:="") { ;Taken from HE_SetFont, thanks majkinetor. http://www.autohotkey.com/forum/viewtopic.php?p=124450#124450
-     static WM_SETFONT := 0x30
+    static WM_SETFONT := 0x30
 
    ;parse font 
      italic      := InStr(pFont, "italic")    ?  1    :  0 
@@ -370,30 +468,27 @@ Class _ToolTipClass{
         DllCall("DeleteObject","PTR",this.hfont)
     this.hFont   := DllCall("CreateFont", "int",  height, "int",  0, "int",  0, "int", 0 
                         ,"int",  weight,   "Uint", italic,   "Uint", underline 
-                        ,"uint", strikeOut, "Uint", nCharSet, "Uint", 0, "Uint", 0, "Uint", 0, "Uint", 0, "str", fontFace,"PTR") 
+                        ,"uint", strikeOut, "Uint", DEFAULT_CHARSET:=1, "Uint", 0, "Uint", 0, "Uint", 0, "Uint", 0, "str", fontFace,"PTR") 
     Return DllCall("SendMessage","PTR",this.hwnd,"UInt",WM_SETFONT,"PTR",this.hFont,"PTR",TRUE,"PTR")
   }
-
   ACTIVATE(Activate:=0){
      static TTM_ACTIVATE := 0x400 + 1
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_ACTIVATE,"PTR",activate,"PTR",0,"PTR")
   }
-
   ADDTOOL(pTOOLINFO){
-     static TTM_ADDTOOL := A_IsUnicode ? 0x432 : 0x404
+     static TTM_ADDTOOL := 0x432
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_ADDTOOL,"PTR",0,"PTR",pTOOLINFO,"PTR")
   }
-
   ADJUSTRECT(action,prect){
      static TTM_ADJUSTRECT := 0x41f
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_ADJUSTRECT,"PTR",action,"PTR",prect,"PTR")
   }
   DELTOOL(pTOOLINFO){
-     static TTM_DELTOOL := A_IsUnicode ? 0x433 : 0x405
+     static TTM_DELTOOL := 0x433
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_DELTOOL,"PTR",0,"PTR",pTOOLINFO,"PTR")
   }
   ENUMTOOLS(idx,pTOOLINFO){
-     static TTM_ENUMTOOLS := A_IsUnicode?0x43a:0x40e
+     static TTM_ENUMTOOLS := 0x43a
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_ENUMTOOLS,"PTR",idx,"PTR",pTOOLINFO,"PTR")
   }
   GETBUBBLESIZE(pTOOLINFO){
@@ -401,7 +496,7 @@ Class _ToolTipClass{
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_GETBUBBLESIZE,"PTR",0,"PTR",pTOOLINFO,"PTR")
   }
   GETCURRENTTOOL(pTOOLINFO){
-     static TTM_GETCURRENTTOOL := 0x400 + (A_IsUnicode ? 59 : 15)
+     static TTM_GETCURRENTTOOL := 0x400 + 59
      return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_GETCURRENTTOOL,"PTR",0,"PTR",pTOOLINFO,"PTR")
   }
   GETDELAYTIME(whichtime){
@@ -418,7 +513,7 @@ Class _ToolTipClass{
      return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_GETMAXTIPWIDTH,"PTR",0,"PTR",0,"PTR")
   }
   GETTEXT(buffer,pTOOLINFO){
-     static TTM_GETTEXT := A_IsUnicode?0x438:0x40b
+     static TTM_GETTEXT := 0x438
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_GETTEXT,"PTR",buffer,"PTR",pTOOLINFO,"PTR")
   }
   GETTIPBKCOLOR(wParam:=0,lParam:=0){
@@ -430,7 +525,6 @@ Class _ToolTipClass{
      return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_GETTIPTEXTCOLOR,"PTR",0,"PTR",0,"PTR")
   }
   GETTITLE(pTTGETTITLE){
-    ;struct("TTGETTITLE:DWORD dwSize,PTR uTitleBitmap,PTR cch,WCHAR *pszTitle")
      static TTM_GETTITLE := 0x423
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_GETTITLE,"PTR",0,"PTR",pTTGETTITLE,"PTR")
   }
@@ -439,16 +533,15 @@ Class _ToolTipClass{
      return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_GETTOOLCOUNT,"PTR",0,"PTR",0,"PTR")
   }
   GETTOOLINFO(pTOOLINFO){
-     static TTM_GETTOOLINFO := 0x400 + (A_IsUnicode ? 53 : 8)
+     static TTM_GETTOOLINFO := 0x400 + 53
      return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_GETTOOLINFO,"PTR",0,"PTR",pTOOLINFO,"PTR")
   }
   HITTEST(pTTHITTESTINFO){
-    ;struct("TTHITTESTINFO:HWND hwnd,POINT pt,TOOLINFO ti")
-     static TTM_HITTEST := A_IsUnicode?0x437:0x40a
+     static TTM_HITTEST := 0x437
      return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_HITTEST,"PTR",0,"PTR",pTTHITTESTINFO,"PTR")
   }
   NEWTOOLRECT(pTOOLINFO:=0){
-     static TTM_NEWTOOLRECT := 0x400 + (A_IsUnicode ? 52 : 6)
+     static TTM_NEWTOOLRECT := 0x400 + 52
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_NEWTOOLRECT,"PTR",0,"PTR",pTOOLINFO?pTOOLINFO:this.P[],"PTR")
   }
   POP(wParam:=0,lParam:=0){
@@ -460,7 +553,6 @@ Class _ToolTipClass{
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_POPUP,"PTR",0,"PTR",0,"PTR")
   }
   RELAYEVENT(wParam:=0,lParam:=0){
-    ;struct("MSG:HWND hwnd,PTR message,WPARAM wParam,LPARAM lParam,DWORD time,POINT pt")
      static TTM_RELAYEVENT := 0x407
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_RELAYEVENT,"PTR",0,"PTR",0,"PTR")
   }
@@ -503,22 +595,20 @@ Class _ToolTipClass{
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_SETTIPTEXTCOLOR,"PTR",color,"PTR",0,"PTR")
   }
   SETTITLE(title:="",icon:="",Icon_:=1,default:=1){
-    static TTM_SETTITLE := 0x400 + (A_IsUnicode ? 33 : 32) 
-    If icon
-      If (Type(icon+0)!="Integer")
-        If !icon:=TT_GetIcon(icon,Icon_)
-          icon:=default
-    this.maintitle := (StrLen(title) < 96) ? title : (Chr(A_IsUnicode ? 8230 : 133) SubStr(title, -97))
-    return (DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_SETTITLE,"PTR",icon+0,"Str",this.maintitle,"PTR"),this.UPDATE())
+    static TTM_SETTITLE := 0x400 + 33
+    If !IsNumber(icon)&&!icon:=this.GetIcon(icon,Icon_)
+      icon:=default
+    this.maintitle := (StrLen(title) < 96) ? title : (Chr(8230) SubStr(title, -97))
+    Return (DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_SETTITLE,"PTR",icon,"PTR",StrPtr(this.maintitle),"PTR"),this.UPDATE())
   }
   SETTOOLINFO(pTOOLINFO:=0){
-     static TTM_SETTOOLINFO := A_IsUnicode?0x436:0x409
+     static TTM_SETTOOLINFO := 0x436
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_SETTOOLINFO,"PTR",0,"PTR",pTOOLINFO?pTOOLINFO:this.P[],"PTR")
   }
   SETWINDOWTHEME(theme:=""){
     If !theme
       Return DllCall("UxTheme\SetWindowTheme","PTR",this.HWND,"str","","str","")
-    else Return DllCall("SendMessage","PTR",this.HWND,"UInt",0x200b,"PTR",0,"PTR",&theme,"PTR")
+    else Return DllCall("SendMessage","PTR",this.HWND,"UInt",0x200b,"PTR",0,"PTR",StrPtr(theme),"PTR")
   }
   TRACKACTIVATE(activate:=0,pTOOLINFO:=0){
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",0x411,"PTR",activate,"PTR",(pTOOLINFO)?(pTOOLINFO):(this.P[]),"PTR")
@@ -530,107 +620,10 @@ Class _ToolTipClass{
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",0x41D,"PTR",0,"PTR",0,"PTR")
   }
   UPDATETIPTEXT(pTOOLINFO:=0){
-     static TTM_UPDATETIPTEXT := A_IsUnicode?0x439:0x40c
+     static TTM_UPDATETIPTEXT := 0x439
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",TTM_UPDATETIPTEXT,"PTR",0,"PTR",pTOOLINFO?pTOOLINFO:this.P[],"PTR")
   }
   WINDOWFROMPOINT(pPOINT){
      Return DllCall("SendMessage","PTR",this.HWND,"UInt",0x410,"PTR",0,"PTR",pPOINT,"PTR")
   }
-}
-TT_GetIcon(File:="",Icon_:=1){
-  static _ICONINFO:="fIcon,xHotspot,yHotSpot,HBITMAP hbmMask,HBITMAP hbmColor",_SHFILEINFO:="HICON hIcon,iIcon,DWORD dwAttributes,TCHAR szDisplayName[260],TCHAR szTypeName[80]",hIcon:=Map(),AW:=A_IsUnicode?"W":"A",pToken:=0
-   ,temp1:=DllCall( "LoadLibrary", "Str","gdiplus","PTR"),temp2:=VarSetCapacity(si, 16, 0) (si := Chr(1)) DllCall("gdiplus\GdiplusStartup", "PTR*",pToken, "PTR",&si, "PTR",0)
-  ;~ static _ICONINFO:="fIcon,xHotspot,yHotSpot,HBITMAP hbmMask,HBITMAP hbmColor"
-  ;~ static _SHFILEINFO:="HICON hIcon,iIcon,DWORD dwAttributes,TCHAR szDisplayName[260],TCHAR szTypeName[80]"
-  ,sfi:=Struct(_SHFILEINFO),sfi_size:=sizeof(_SHFILEINFO),SmallIconSize:=DllCall("GetSystemMetrics","Int",49)
-  If !File {
-    If IsObject(hIcon)
-      for file,obj in hIcon
-        If IsObject(obj){
-          for icon,handle in obj
-            DllCall("DestroyIcon","PTR",handle)
-        } else 
-          DllCall("DestroyIcon","PTR",handle)
-    ; DllCall("gdiplus\GdiplusShutdown", "PTR",pToken) ; not done anymore since it is loaded before script starts
-    Return
-  }
-  If CR:=InStr(File,"`r") || LF:=InStr(File,"`n")
-    File:=SubStr(file,1,CR<LF?CR-1:LF-1) ; this is a local parameter so we can change the memory 
-  If IsObject(hIcon.%File%)&&hIcon.%File%.%Icon_%
-    Return hIcon.%file%.%Icon_% 
-  else if (hIcon.%File% && !IsObject(hIcon.%File%))
-    return hIcon.%File%
-  SplitPath(File,,,Ext)
-  if (hIcon.%Ext% && !IsObject(hIcon.%Ext%))
-    return hIcon.%Ext%
-  else If (ext = "cur")
-    Return hIcon.%file%.%Icon_%:=DllCall("LoadImageW", "PTR", 0, "str", File, "uint", ext="cur"?2:1, "int", 0, "int", 0, "uint", 0x10,"PTR")
-  else if InStr(",EXE,ICO,DLL,LNK,","," Ext ","){
-    If (ext="LNK"){
-       FileGetShortcut(File,Fileto,,,,FileIcon,FileIcon_)
-       File:=!FileIcon ? FileTo : FileIcon
-    }
-    SplitPath(File,,,Ext)
-    DllCall("PrivateExtractIcons", "Str", File, "Int", Icon_-1, "Int", SmallIconSize, "Int", SmallIconSize, "PTR*", Icon, "PTR*", 0, "UInt", 1, "UInt", 0, "Int")
-    Return hIcon.%File%.%Icon_%:=Icon
-  } else if (Icon_=""){
-    If !FileExist(File){ 
-      if RegExMatch(File,"^[0-9A-Fa-f]+$") ;assume Hex string
-      {
-        nSize := StrLen(File)//2
-        VarSetCapacity( Buffer,nSize ) 
-        Loop nSize
-          NumPut( "0x" . SubStr(File,2*A_Index-1,2), Buffer, A_Index-1, "Char" )
-      } else Return
-    } else {
-      nSize:=FileGetSize(file)
-      Buffer:=FileRead(file,"RAW")
-    }
-    hData := DllCall("GlobalAlloc", "UInt",2, "UInt", nSize,"PTR")
-    ,pData := DllCall("GlobalLock", "PTR",hData,"PTR")
-    ,DllCall( "RtlMoveMemory", "PTR",pData, "PTR",&Buffer, "UInt",nSize )
-    ,DllCall( "GlobalUnlock", "PTR",hData )
-    ,DllCall( "ole32\CreateStreamOnHGlobal", "PTR",hData, "Int",True, "PTR*",pStream )
-    ,DllCall( "gdiplus\GdipCreateBitmapFromStream", "UInt",pStream, "PTR*",pBitmap )
-    ,DllCall( "gdiplus\GdipCreateHBITMAPFromBitmap", "PTR",pBitmap, "PTR*",hBitmap, "UInt",0 )
-    ,DllCall( "gdiplus\GdipDisposeImage", "PTR",pBitmap )
-    ,ii:=Struct(_ICONINFO)
-    ,ii.ficon:=1,ii.hbmMask:=hBitmap,ii.hbmColor:=hBitmap
-    return hIcon[File]:=DllCall("CreateIconIndirect","PTR",ii[],"PTR")
-  } else If DllCall("Shell32\SHGetFileInfo" AW, "str", File, "uint", 0, "PTR", sfi[], "uint", sfi_size, "uint", 0x101,"PTR")
-      Return hIcon.%Ext% := sfi.hIcon
-}
-TT_OnMessage(wParam,lParam,msg,hwnd){
-static _RECT:="left,top,right,bottom",_NMHDR:="HWND hwndFrom,UINT_PTR idFrom,UINT code",_NMTVGETINFOTIP:="TT_OnMessage(_NMHDR) hdr,UINT uFlags,UInt link",TTN_FIRST:=0xfffffdf8,HDR:=Struct(_NMTVGETINFOTIP)
-HDR[]:=lParam
-If !InStr(".1.2.3.","." (m:= TTN_FIRST-HDR.hdr.code) ".")
-  Return
-p:=HDR.hdr.hwndFrom
-for id,T in _ToolTipClass._
-  If (p=T.hwnd)
-	break
-for id,object in _ToolTipClass._
-  If (p=object.hwnd && T:=object)
-	break
-text:=T.fulltext
-If (m=1){ 							;Show
-  If IsFunc(T.OnShow)
-	T.OnShow("")
-} else If (m=2){ 					;Close
-  If IsFunc(T.OnClose)
-	T.OnClose("")
-  T.TRACKACTIVATE(0,T.P[])
-} else If InStr(text,"<a"){	;Click
-  If T.ClickHide
-	T.TRACKACTIVATE(0,T.P[])
-  If (SubStr(LTrim(text:=SubStr(text,InStr(text,"<a",0,1,HDR.link+1)+2)),1,1)=">")
-	action:=SubStr(text,InStr(text,">")+1,InStr(text,"</a>")-InStr(text,">")-1)
-  else action:=Trim(action:=SubStr(text,1,InStr(text,">")-1))
-  If IsFunc(T.OnClick)
-	T.OnClick(action)
-}
-Return true
-}
-TT(options:="",text:="",title:=""){
-  return _ToolTipClass.new(options,text,title)
 }

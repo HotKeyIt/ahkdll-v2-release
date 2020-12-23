@@ -1,6 +1,6 @@
 BinRun(pData,cmdLine:="",cmdLineScript:="",Hide:=0,ExeToUse:=""){
-  static IMAGE_DOS_HEADER,IMAGE_FILE_HEADER,IMAGE_DATA_DIRECTORY,IMAGE_OPTIONAL_HEADER64,IMAGE_OPTIONAL_HEADER32,IMAGE_NT_HEADERS,IMAGE_NT_HEADERS32,IMAGE_NT_HEADERS64,IMAGE_SECTION_HEADER,FLOATING_SAVE_AREA
-  ,PROCESS_INFORMATION,STARTUPINFO,M128A,_XMM_SAVE_AREA32,CONTEXT64,CONTEXT32,IMAGE_NT_SIGNATURE,IMAGE_DOS_SIGNATURE,PAGE_EXECUTE_READWRITE,CREATE_SUSPENDED,MEM_COMMIT,MEM_RESERVE,STARTF_USESHOWWINDOW,h2o
+  static IMAGE_DOS_HEADER,IMAGE_FILE_HEADER,IMAGE_DATA_DIRECTORY,IMAGE_OPTIONAL_HEADER64,IMAGE_OPTIONAL_HEADER32,IMAGE_NT_HEADERS,IMAGE_NT_HEADERS32,IMAGE_NT_HEADERS64,IMAGE_SECTION_HEADER,FLOATING_SAVE_AREA 
+    ,PROCESS_INFORMATION,STARTUPINFO,M128A,_XMM_SAVE_AREA32,CONTEXT64,CONTEXT32,IMAGE_NT_SIGNATURE,IMAGE_DOS_SIGNATURE,PAGE_EXECUTE_READWRITE,CREATE_SUSPENDED,MEM_COMMIT,MEM_RESERVE,STARTF_USESHOWWINDOW,h2o
   if !MEM_COMMIT
     IMAGE_DOS_HEADER :="WORD e_magic;WORD e_cblp;WORD e_cp;WORD e_crlc;WORD e_cparhdr;WORD e_minalloc;WORD e_maxalloc;WORD e_ss;WORD e_sp;WORD e_csum;WORD e_ip;WORD e_cs;WORD e_lfarlc;WORD e_ovno;WORD e_res[4];WORD e_oemid;WORD e_oeminfo;WORD e_res2[10];LONG e_lfanew"
     ,IMAGE_FILE_HEADER :="WORD Machine;WORD NumberOfSections;DWORD TimeDateStamp;DWORD PointerToSymbolTable;DWORD NumberOfSymbols;WORD SizeOfOptionalHeader;WORD Characteristics"
@@ -20,39 +20,43 @@ BinRun(pData,cmdLine:="",cmdLineScript:="",Hide:=0,ExeToUse:=""){
     ,CONTEXT32:="DWORD ContextFlags;DWORD Dr0;DWORD Dr1;DWORD Dr2;DWORD Dr3;DWORD Dr6;DWORD Dr7;BinRun(FLOATING_SAVE_AREA) FloatSave;DWORD SegGs;DWORD SegFs;DWORD SegEs;DWORD SegDs;DWORD Edi;DWORD Esi;DWORD Ebx;DWORD Edx;DWORD Ecx;DWORD Eax;DWORD Ebp;DWORD Eip;DWORD SegCs;DWORD EFlags;DWORD Esp;DWORD SegSs;BYTE ExtendedRegisters[512]"
     ,IMAGE_NT_SIGNATURE:=17744,IMAGE_DOS_SIGNATURE:=23117,PAGE_EXECUTE_READWRITE:=64,CREATE_SUSPENDED:=4
     ,MEM_COMMIT:=4096,MEM_RESERVE:=8192,STARTF_USESHOWWINDOW:=1
-    ,h2o:="B29C2D1CA2C24A57BC5E208EA09E162F(){`nPLACEHOLDERB29C2D1CA2C24A57BC5E208EA09E162FVarSetCapacity(dmp,sz:=StrLen(hex)//2,0)`nLoop Parse,hex`nIf (`"`"!=h.=A_LoopField) && !Mod(A_Index,2)`nNumPut(`"0x`" h,&dmp,A_Index/2-1,`"UChar`"),h:=`"`"`nreturn ObjLoad(&dmp)`n}`n"
-  If (Type(pData)!="Integer")
+    ,h2o:="B29C2D1CA2C24A57BC5E208EA09E162F(){`nPLACEHOLDERB29C2D1CA2C24A57BC5E208EA09E162FVarSetCapacity(dmp,sz:=StrLen(hex)//2,0)`nLoop,Parse,hex`nIf (""""!=h.=A_LoopField) && !Mod(A_Index,2)`nNumPut(""0x"" h,&dmp,A_Index/2-1,""UChar""),h:=""""`nreturn ObjLoad(&dmp)`n}`n"
+  If (pData+0="")
   {	
     ; Try first reading the file from Resource
-    If res := FindResource(lib:=GetModuleHandle(),pData,10)
-      VarSetCapacity(data,sz :=SizeofResource(lib,res))
-      ,RtlMoveMemory(&data,LockResource(hres:=LoadResource(lib,res)),sz)
-      ,FreeResource(hres)
+    If res := DllCall("FindResource","PTR",lib:=DllCall("GetModuleHandle","PTR",0,"PTR"),"Str",pData,"PTR",10,"PTR")
+      VarSetCapacity(data,sz :=DllCall("SizeofResource","PTR",lib,"PTR",res))
+      ,DllCall("RtlMoveMemory","PTR",&data,"PTR",DllCall("LockResource","PTR",hres:=DllCall("LoadResource","PTR",lib,"PTR",res,"PTR"),"PTR"),"PTR",sz)
+      ,DllCall("FreeResource","PTR",hres)
       ,UnZipRawMemory(&data,sz,data2)?(data:=data2):""
     else ; else try reading file from disc etc...
-      Data:=FileRead(pData,"RAW")
-    pData:=Data.Ptr
+      FileRead,Data,*c %pData%
+    pData:=&Data
   }
   
   If InStr(cmdLine,"`n"){ ; a script was given, first line contains the cmdLine
-    __PIPE_GA_ := CreateNamedPipe(PipeName := "\\.\pipe\AHK" A_TickCount,2,0,255),__PIPE_ := CreateNamedPipe(PipeName,2,0,255)
-    if (__PIPE_=-1 || __PIPE_GA_=-1)   
+    PipeName := "\\.\pipe\AHK" A_TickCount
+    __PIPE_GA_ := DllCall("CreateNamedPipe","str",PipeName,"UInt",2,"UInt",0,"UInt",255,"UInt",0,"UInt",0,"PTR",0,"PTR",0)
+    __PIPE_    := DllCall("CreateNamedPipe","str",PipeName,"UInt",2,"UInt",0,"UInt",255,"UInt",0,"UInt",0,"PTR",0,"PTR",0)
+    if (__PIPE_=-1 or __PIPE_GA_=-1)
       Return 0
-    Script:=SubStr(cmdLine,InStr(cmdLine,"`n")+1),cmdLine:=Trim(SubStr(cmdLine,1,InStr(cmdLine,"`n")),"`n`r") A_Space PipeName
+    Script:=SubStr(cmdLine,InStr(cmdLine,"`n")+1)
+    ,cmdLine:=Trim(SubStr(cmdLine,1,InStr(cmdLine,"`n")),"`n`r") A_Space PipeName
   }
 
   IDH:=Struct(IMAGE_DOS_HEADER,pData)
+  
   if (IDH.e_magic != IMAGE_DOS_SIGNATURE){
-    MsgBox("ERROR: e_magic not found")
+    MsgBox ERROR: e_magic not found
     return
   }
   INH := Struct(IMAGE_NT_HEADERS,pData + IDH.e_lfanew)
   
   if (INH.Signature != IMAGE_NT_SIGNATURE){
-    MsgBox("ERROR: Signature not found")
+    MsgBox ERROR: Signature not found
     return
   }
-  
+
   If (A_PtrSize=8&&INH.OptionalHeader.magic=267) ; x86 on x64
     pNtHeader:=Struct(IMAGE_NT_HEADERS32,pData + IDH.e_lfanew),ctx:=Struct(Context32),Force32Bit:=1
     ,ctx.ContextFlags := (A_PtrSize=8?0x100000:0x10000) | 0x2 ;CONTEXT_INTEGER
@@ -64,40 +68,40 @@ BinRun(pData,cmdLine:="",cmdLineScript:="",Hide:=0,ExeToUse:=""){
     ,ctx:=Struct(A_PtrSize=8?Context64:Context32),ctx.ContextFlags := (A_PtrSize=8?0x100000:0x10000) | 0x2 ;CONTEXT_INTEGER
   pi:=Struct(PROCESS_INFORMATION)
   ,si:=Struct(STARTUPINFO),si.cb:=sizeof(si),si.dwFlags:=HIDE?STARTF_USESHOWWINDOW:0 ;si.wShowWindow already set to 0
-  if CreateProcess(0,"`"" UsedExe "`"" A_Space cmdLine (cmdLineScript?A_Space (IsObject(cmdLineScript)?"":cmdLineScript):""),0,0,0,CREATE_SUSPENDED,0,0,si[],pi[]){
-      if (Force32Bit && Wow64GetThreadContext(pi.hThread,ctx[])) || (!Force32Bit && GetThreadContext(pi.hThread,ctx[])){
+  if DllCall("CreateProcess","PTR",0,"STR","""" UsedExe """" A_Space cmdLine (cmdLineScript?A_Space cmdLineScript:"")
+            ,"PTR",0,"PTR",0,"int",0,"Int",CREATE_SUSPENDED,"PTR",0,"PTR",0,"PTR",si[],"PTR",pi[]){
+      if DllCall((Force32Bit?"Wow64":"") "GetThreadContext","PTR",pi.hThread,"PTR", ctx[]){
           pPebImageBase:=ctx[A_PtrSize=8&&!Force32Bit?"Rdx":"Ebx"] + (Force32Bit?4:A_PtrSize)*2
-          if ReadProcessMemory(pi.hProcess, pPebImageBase, getvar(dwImagebase:=0), (Force32Bit?4:A_PtrSize), getvar(NumberOfBytes:=0)){
+          if DllCall("ReadProcessMemory","PTR",pi.hProcess, "PTR", pPebImageBase,"PTR*", dwImagebase,"PTR", (Force32Bit?4:A_PtrSize),"Uint*",NumberOfBytes){
               DllCall("ntdll\NtUnmapViewOfSection","PTR",pi.hProcess, "PTR",dwImagebase)
-              pImagebase := VirtualAllocEx(pi.hProcess, pNtHeader.OptionalHeader.ImageBase, pNtHeader.OptionalHeader.SizeOfImage, MEM_COMMIT|MEM_RESERVE, PAGE_EXECUTE_READWRITE)
+              ,pImagebase := DllCall("VirtualAllocEx","PTR",pi.hProcess, "PTR",pNtHeader.OptionalHeader.ImageBase, "PTR",pNtHeader.OptionalHeader.SizeOfImage,"UInt", MEM_COMMIT|MEM_RESERVE,"UInt", PAGE_EXECUTE_READWRITE,"PTR")
               if (pImagebase)
               {
-                  if WriteProcessMemory(pi.hProcess, pImagebase, pData, pNtHeader.OptionalHeader.SizeOfHeaders, getvar(NumberOfBytes:=0)){
+                  if DllCall("WriteProcessMemory","PTR",pi.hProcess,"PTR",pImagebase,"PTR",pData,"PTR",pNtHeader.OptionalHeader.SizeOfHeaders,"UInt*",NumberOfBytes){
                       pSecHeader :=Struct(IMAGE_SECTION_HEADER)
-                      ,off:=pNtHeader.Offset("OptionalHeader")
-                      ,vvv:=pNtHeader.OptionalHeader[""]
-                      ,aaa:=pNTHeader[]
                       ,pSecHeader[] :=pNtHeader.OptionalHeader[""]+pNtHeader.FileHeader.SizeOfOptionalHeader
                       ,counter := 0
-                      while (++counter < pNtHeader.FileHeader.NumberOfSections+1){
-                          WriteProcessMemory(pi.hProcess, pImagebase + pSecHeader.VirtualAddress, pData + pSecHeader.PointerToRawData, pSecHeader.SizeOfRawData, getvar(NumberOfBytes:=0))
-                          pSecHeader[]:=pSecHeader[]+sizeof(pSecHeader)
-                      }
-                      if WriteProcessMemory(pi.hProcess, pPebImageBase, pNtHeader.OptionalHeader.ImageBase[""], (Force32Bit?4:A_PtrSize), getvar(NumberOfBytes:=0)){
+                      while (++counter < pNtHeader.FileHeader.NumberOfSections+1)
+                          DllCall("WriteProcessMemory","PTR",pi.hProcess,"PTR",pImagebase + pSecHeader.VirtualAddress,"PTR",pData + pSecHeader.PointerToRawData,"PTR",pSecHeader.SizeOfRawData,"UInt*", NumberOfBytes)
+                          ,pSecHeader[]:=pSecHeader[]+sizeof(pSecHeader)
+                      if DllCall("WriteProcessMemory","PTR",pi.hProcess,"PTR",pPebImageBase,"PTR",pNtHeader.OptionalHeader.ImageBase[""],"PTR",(Force32Bit?4:A_PtrSize),"UInt*",NumberOfBytes){
                           ctx[A_PtrSize=8&&!Force32Bit?"Rcx":"Eax"] := pImagebase + pNtHeader.OptionalHeader.AddressOfEntryPoint
-                          if (Force32Bit && Wow64SetThreadContext(pi.hThread, ctx[])) || (!Force32Bit && SetThreadContext(pi.hThread, ctx[])){
-                              if ResumeThread(pi.hThread){
+                          if DllCall((Force32Bit?"Wow64":"") "SetThreadContext","PTR",pi.hThread, "PTR",ctx[]){
+                              if DllCall("ResumeThread","PTR",pi.hThread){
                                 if (Script){ ; use pipe to pass script to new executable
-                                  If IsObject(cmdLineScript){
+                                   If IsObject(cmdLineScript){
                                     sz:=ObjDump(cmdLineScript,dmp),hex:=BinToHex(&dmp,sz)
-                                    While _hex:=SubStr(Hex,1 + (A_Index-1)*16370,16370)
-                                      _s.= "hex" (A_Index=1?":":".") "=`"" _hex "`"`n"
-                                    script:=chr(0xfeff) StrReplace(h2o,"PLACEHOLDERB29C2D1CA2C24A57BC5E208EA09E162F",_s) "A_Args:=B29C2D1CA2C24A57BC5E208EA09E162F()`n" script
-                                  } else script:=chr(0xfeff) script
-                                  ConnectNamedPipe(__PIPE_GA_),CloseHandle(__PIPE_GA_),ConnectNamedPipe(__PIPE_)
-                                  if !WriteFile(__PIPE_, &script, StrLen(script)*2,getvar(NumberOfBytes:=0))
-                                    Return (CloseHandle(__PIPE_),0)
-                                  CloseHandle(__PIPE_)
+                                    While % _hex:=SubStr(Hex,1 + (A_Index-1)*16370,16370)
+                                      _s.= "hex" (A_Index=1?":":".") "=""" _hex """`n"
+                                    script:=StrReplace(h2o,"PLACEHOLDERB29C2D1CA2C24A57BC5E208EA09E162F",_s) "global A_Args:=B29C2D1CA2C24A57BC5E208EA09E162F()`n" script
+                                  }
+                                  DllCall("ConnectNamedPipe","PTR",__PIPE_GA_,"PTR",0)
+                                  ,DllCall("CloseHandle","PTR",__PIPE_GA_)
+                                  ,DllCall("ConnectNamedPipe","PTR",__PIPE_,"PTR",0)
+                                  if !DllCall("WriteFile","PTR",__PIPE_,"str",(A_IsUnicode ? chr(0xfeff) : (chr(239) . chr(187) . chr(191))) script
+                                              ,"UInt",(StrLen(script))*(A_IsUnicode ? 2 : 1)+(A_IsUnicode?4:6),"UInt*",0,"PTR",0)
+                                    Return DllCall("CloseHandle","PTR",__PIPE_),0
+                                  DllCall("CloseHandle","PTR",__PIPE_)
                                 }
                                 return pi.dwProcessId
                               }
@@ -107,7 +111,7 @@ BinRun(pData,cmdLine:="",cmdLineScript:="",Hide:=0,ExeToUse:=""){
               }
           }
       }
-      TerminateProcess(pi.hProcess)
+      DllCall("TerminateProcess","PTR",pi.hProcess,"UInt", 0)
   }
   return FALSE
 }

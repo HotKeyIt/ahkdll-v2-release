@@ -15,6 +15,6 @@ FontEnumProc(lpelfe, lpntme, FontType, lParam)
         ;~ ,FONTSIGNATURE:="DWORD fsUsb[4];DWORD fsCsb[2]"
         ;~ ,ntme:=Struct("FontEnumProc(NEWTEXTMETRIC) ntmTm;FontEnumProc(FONTSIGNATURE) ntmFontSig")
   ;~ elfe[]:=lpelfe,ntme[]:=lpntme
-	NumPut(1,lParam,"Char") ; Indicate to the caller that the font exists.
+	NumPut("Char",1,lParam) ; Indicate to the caller that the font exists.
 	return 0  ; Stop the enumeration after the first, since even one match means the font exists.
 }

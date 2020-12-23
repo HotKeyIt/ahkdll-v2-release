@@ -39,7 +39,7 @@
 
 	if (!g_hFontSplash)
 	{
-		VarSetCapacity(default_font_name,65*2)
+		default_font_name:=BufferAlloc(65*2)
 		nSize := 12, nWeight := FW_NORMAL
 		hdc := CreateDC("DISPLAY",0,0,0)
 		if (FontExist(hdc, "Segoe UI")) ; Use a more appealing font under Windows Vista or later (Segoe UI).
@@ -50,7 +50,7 @@
 		else
 		{
 			SelectObject(hdc,GetStockObject(DEFAULT_GUI_FONT))		; Get Default Font Name
-			GetTextFace(hdc,65 - 1,&default_font_name) ; -1 just in case, like AutoIt3.
+			GetTextFace(hdc,65 - 1,default_font_name.Ptr) ; -1 just in case, like AutoIt3.
 		}
 		CyPixels := GetDeviceCaps(hdc,LOGPIXELSY)			; For Some Font Size Math
 		DeleteDC(hdc)
@@ -58,7 +58,7 @@
 		;nSize = vParams[8].nValue()		; Font Size
 		;if ( vParams[9].nValue() >= 0 && vParams[9].nValue() <= 1000 )
 		;	nWeight = vParams[9].nValue()			; Font Weight
-		g_hFontSplash := CreateFont(0-(nSize*CyPixels)/72,0,0,0,nWeight,0,0,0,DEFAULT_CHARSET,OUT_TT_PRECIS,CLIP_DEFAULT_PRECIS,PROOF_QUALITY,FF_DONTCARE,default_font_name)	; Create Font
+		g_hFontSplash := CreateFont(0-(nSize*CyPixels)/72,0,0,0,nWeight,0,0,0,DEFAULT_CHARSET,OUT_TT_PRECIS,CLIP_DEFAULT_PRECIS,PROOF_QUALITY,FF_DONTCARE,StrGet(default_font_name))	; Create Font
 		; The font is deleted when by g_script's destructor.
 	}
 

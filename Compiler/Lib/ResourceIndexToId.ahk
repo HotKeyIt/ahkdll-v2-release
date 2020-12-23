@@ -11,7 +11,7 @@ ResourceIndexToId(aModule, aType, aIndex){
 }
 ResourceIndexToIdEnumProc(hModule, lpszType, lpszName, lParam){
 	static enum_data
-  if !enum_data
+	if !enum_data
     enum_data:=Struct("find_index,index,result") ;ResourceIndexToIdEnumData
 	enum_data[] := lParam
 	if (++enum_data.index = enum_data.find_index)
