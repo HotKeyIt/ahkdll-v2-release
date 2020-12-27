@@ -1,7 +1,7 @@
 StaticVar(name,func){
-    if (fun:=FindFunc(func))&&mVar:=(f:=Struct("ScriptStruct(Func)",fun)).mStaticVar
-        Loop f.mStaticVarCount
-            If (var:=mVar[A_Index]).mName = name
+    if (fun:=FindFunc(func))&&mStaticVars:=Struct(_AHKUserFunc,fun).mStaticVars
+        Loop mStaticVars.mCount
+            If (var:=mStaticVars.mItem[A_Index]).mName = name
                 return var
     return []
 }
