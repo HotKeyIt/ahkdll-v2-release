@@ -174,7 +174,7 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 			AhkPath := SubStr(BinFile,-5)="SC.bin" ? SubStr(BinFile,1,-6) ".exe" : BinFile
 		; AhkPath := FileExist(AhkPath) ? AhkPath :A_ScriptDir "\..\AutoHotkeyU32.exe"
 		; AhkPath := FileExist(AhkPath) ? AhkPath : A_AhkPath
-
+  
 		IfNotExist, %AhkPath%
 		{	Util_Error("Warning: AutoHotkey.exe could not be located!`n`nAuto-include"
 . "s from Function Libraries, and 'Obey' directives will not be processed.",0)

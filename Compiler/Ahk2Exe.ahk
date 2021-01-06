@@ -345,12 +345,7 @@ Error_ForceExit := true
 
 p := []
 Loop, %0%
-{
-	if %A_Index% = /NoDecompile
-		UseCompression := true ; Util_Error("Error: /NoDecompile is not supported.")
-	else 
 		p.Insert(%A_Index%)
-}
 
 CLIMode := true  ; Set default - may be overridden.
 
@@ -434,12 +429,14 @@ CmdArg_CP(p2) { ; for example: '/cp 1252' or '/cp UTF-8'
 		ScriptFileCP := p2
 }
 
-CmdArg_Pass() {
-	BadParams("Error: Password protection is not supported.", 0x24)
+CmdArg_Pass(p2) {
+  global
+	UsePassword:=p2 ;BadParams("Error: Password protection is not supported.", 0x24)
 }
 
 CmdArg_NoDecompile() {
-	BadParams("Error: /NoDecompile is not supported.", 0x23)
+  global
+	UseCompression := true ;BadParams("Error: /NoDecompile is not supported.", 0x23)
 }
 
 BrowseAhk:
@@ -491,6 +488,8 @@ FileDelete %SaveAs%
 FileAppend % "RunWait """ A_ScriptDir "\Ahk2Exe.exe"" /in """ AhkFile """"
 . (ExeFile ? " /out """ ExeFile """" : "")
 . (IcoFile ? " /icon """ IcoFile """": "") 
+. (UseCompression ? " /NoDecompile": "") 
+. (UseEncryption ? " /pass """ UsePassword """": "") 
 . " /bin """ BinFile """ /compress " UseMpress-1, %SaveAs%
 Return
 
