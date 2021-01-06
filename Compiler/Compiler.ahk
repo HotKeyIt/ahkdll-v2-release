@@ -140,8 +140,8 @@ BundleAhkScript(ExeFile, AhkFile, UseMPRESS, IcoFile="", fileCP="", UseCompressi
         NumPut('UShort', 0, buf.Ptr + totalsz - 1)
         If !BinScriptBody := ZipRawMemory(buf.Ptr,totalsz,'" UsePassword "')
           ExitApp
-        f:=FileOpen(A_AhkDir '\BinScriptBody.bin','w -rwd'),f.RawWrite(BinScriptBody),f.Close()
-      )","BinScriptBody","",A_AhkDir "\AutoHotkeyU.exe")
+        f:=FileOpen(A_AhkDir '\..\BinScriptBody.bin','w -rwd'),f.RawWrite(BinScriptBody),f.Close()
+      )","BinScriptBody","",A_AhkDir "\v2\AutoHotkeyU.exe")
     else
       PID:=DynaRun("
       (
