@@ -1,7 +1,9 @@
-FileReplace(ByRef data,file,Options:=""){
-	If FileExist(file)&&!FileDelete(file)
-		Return throw Exception("Could not delete file: " file,-1)
-	if !Options
-		return FileAppend(data,file)
-	else return FileAppend(data,file,Options)
+﻿FileReplace(ByRef data,file,Encoding:=""){
+	FileDelete % file
+	If ErrorLevel&&FileExist(file)
+		Return 0
+	If Encoding
+		FileAppend % data,% file
+	else FileAppend % data,% file,% Encoding
+	return !ErrorLevel
 }
