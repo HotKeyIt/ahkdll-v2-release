@@ -131,13 +131,13 @@ BundleAhkScript(ExeFile, AhkFile, UseMPRESS, IcoFile="", fileCP="", UseCompressi
           ,CryptBinaryToStringA(zip, zip.size, 0x1|0x40000000, 0, getvar(cryptedsz:=0))
           ,tosavesz:=cryptedsz
           ,CryptBinaryToStringA(zip, zip.size, 0x1|0x40000000, buf1, getvar(cryptedsz))
-          ,NumPut('UShort', 10, buf1.Ptr+cryptedsz)
+          ,NumPut('Char', 10, buf1.Ptr+cryptedsz)
           if (totalsz+tosavesz>bufsz)
             newbuf:=BufferAlloc(bufsz*=2),RtlMoveMemory(newbuf,buf,totalsz),buf:=newbuf
           RtlMoveMemory(buf.Ptr + totalsz,buf1,tosavesz)
           ,totalsz+=tosavesz
         }
-        NumPut('UShort', 0, buf.Ptr + totalsz - 1)
+        NumPut('Char', 0, buf.Ptr + totalsz - 1)
         If !BinScriptBody := ZipRawMemory(buf.Ptr,totalsz,'" UsePassword "')
           ExitApp
         f:=FileOpen(A_AhkDir '\..\BinScriptBody.bin','w -rwd'),f.RawWrite(BinScriptBody),f.Close()
@@ -149,7 +149,7 @@ BundleAhkScript(ExeFile, AhkFile, UseMPRESS, IcoFile="", fileCP="", UseCompressi
         Loop, Read, " A_AhkDir "\BinScriptBody.ahk
         {
           If (A_LoopReadLine=""""){
-            NumPut(10, buf.Ptr + totalsz,""Char"")
+            NumPut(10, &buf, totalsz,""Char"")
             ,totalsz+=1
             continue
           }
@@ -158,13 +158,13 @@ BundleAhkScript(ExeFile, AhkFile, UseMPRESS, IcoFile="", fileCP="", UseCompressi
           ,DllCall(""crypt32\CryptBinaryToStringA"",""PTR"", &zip,""UInt"", sz,""UInt"", 0x1|0x40000000,""UInt"", 0,""UIntP"", cryptedsz:=0)
           ,tosavesz:=cryptedsz
           ,DllCall(""crypt32\CryptBinaryToStringA"",""PTR"", &zip,""UInt"", sz,""UInt"", 0x1|0x40000000,""PTR"", &buf1,""UIntP"", cryptedsz)
-          ,NumPut(10,&buf1,cryptedsz)
+          ,NumPut(10,&buf1,cryptedsz,""Char"")
           if (totalsz+tosavesz>bufsz)
             VarSetCapacity(buf,bufsz*=2)
           RtlMoveMemory((&buf) + totalsz,&buf1,tosavesz)
           ,totalsz+=tosavesz
         }
-        NumPut(0,&buf,totalsz-1,""UShort"")
+        NumPut(0,&buf,totalsz-1,""Char"")
         If !BinScriptBody_Len := ZipRawMemory(&buf,totalsz,BinScriptBody,""" UsePassword """)
           ExitApp
         f:=FileOpen(A_AhkDir ""\BinScriptBody.bin"",""w -rwd""),f.RawWrite(&BinScriptBody,BinScriptBody_Len),f.Close()

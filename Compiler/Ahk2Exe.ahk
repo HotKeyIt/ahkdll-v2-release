@@ -434,9 +434,9 @@ CmdArg_Pass(p2) {
 	UsePassword:=p2 ;BadParams("Error: Password protection is not supported.", 0x24)
 }
 
-CmdArg_NoDecompile() {
+CmdArg_NoDecompile(p2) {
   global
-	UseCompression := true ;BadParams("Error: /NoDecompile is not supported.", 0x23)
+	UseCompression := p2=0 ? false : true ;BadParams("Error: /NoDecompile is not supported.", 0x23)
 }
 
 BrowseAhk:
