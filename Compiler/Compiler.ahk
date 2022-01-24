@@ -118,7 +118,7 @@ BundleAhkScript(ExeFile, AhkFile, UseMPRESS, IcoFile="", fileCP="", UseCompressi
       PID:=DynaRun("
       (
         UsePassword:=''
-        buf:=BufferAlloc(bufsz:=10485760,00),totalsz:=0,buf1:=BufferAlloc(10485760)
+        buf:=Buffer(bufsz:=10485760,00),totalsz:=0,buf1:=Buffer(10485760)
         Loop Read, '" A_AhkDir "\BinScriptBody.ahk'
         {
           If (A_LoopReadLine=''){
@@ -133,7 +133,7 @@ BundleAhkScript(ExeFile, AhkFile, UseMPRESS, IcoFile="", fileCP="", UseCompressi
           ,CryptBinaryToStringA(zip, zip.size, 0x1|0x40000000, buf1, getvar(cryptedsz))
           ,NumPut('Char', 10, buf1.Ptr+cryptedsz)
           if (totalsz+tosavesz>bufsz)
-            newbuf:=BufferAlloc(bufsz*=2),RtlMoveMemory(newbuf,buf,totalsz),buf:=newbuf
+            newbuf:=Buffer(bufsz*=2),RtlMoveMemory(newbuf,buf,totalsz),buf:=newbuf
           RtlMoveMemory(buf.Ptr + totalsz,buf1,tosavesz)
           ,totalsz+=tosavesz
         }

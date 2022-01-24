@@ -83,6 +83,8 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 			if !contSection 
 			&& RegExMatch(tline, "i)^#Include(Again)?[ \t]*[, \t]\s*(.*)$", o)
 			{
+        if InStr(o2,":",,3)
+          continue ; included by /iLib
 				IsIncludeAgain := (o1 = "Again")
 				IgnoreErrors := false
 				IncludeFile := o2
