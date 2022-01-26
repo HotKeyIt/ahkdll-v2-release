@@ -113,7 +113,7 @@ BundleAhkScript(ExeFile, AhkFile, UseMPRESS, IcoFile="", fileCP="", UseCompressi
 	,ScriptBody :=Trim(ScriptBody,"`n")
 	If UseCompression {
     FileDelete, %A_AhkDir%\BinScriptBody.ahk
-    FileAppend, %ScriptBody%, %A_AhkDir%\BinScriptBody.ahk
+    FileAppend, %ScriptBody%, %A_AhkDir%\BinScriptBody.ahk, UTF-8
     If SubStr(DerefIncludeVars.A_AhkVersion,1,1) = 2
       PID:=DynaRun("
       (
